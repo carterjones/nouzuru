@@ -48,7 +48,7 @@ bla bla bla
 
 #### 1. Get the source
 
-    git clone https://github.com/carterjones/nouzuru.git --recursive
+    git clone https://github.com/section-9/nouzuru.git --recursive
 
 #### 2. Set up distorm3
 
@@ -84,7 +84,7 @@ For more information, please see the
 ## Documentation
 
 Documentation can be found at
-http://carterjones.github.com/nouzuru/doc/html/annotated.html
+http://section-9.github.com/nouzuru/doc/html/annotated.html
 
 ## License
 
