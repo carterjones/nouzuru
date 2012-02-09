@@ -1,0 +1,15 @@
+*
+!.gitignore
+!*.cs
+!*.csproj
+!*.resx
+!*.settings
+!*.sln
+!*.vcxproj
+!Nouzuru
+!README.md
+!plugins
+!plugins/distorm3cs
+!Tests
+!UNLICENSE
+!WAIVER
