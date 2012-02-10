@@ -132,6 +132,78 @@
         #region Methods
 
         /// <summary>
+        /// Sets the instruction pointer of the main thread to the specified value.
+        /// </summary>
+        /// <param name="address">The address to which the instruction pointer should be set.</param>
+        /// <returns>Returns true if the instruction pointer was successfully set.</returns>
+        public bool SetIP(IntPtr address)
+        {
+            if (!this.IsOpen)
+            {
+                return false;
+            }
+
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
+            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            {
+                this.Status.Log("Could not open thread to add hardware breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                return false;
+            }
+
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log("Unable to suspend thread when setting instructin pointer. tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
+            WinApi.CONTEXT cx = new WinApi.CONTEXT();
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.GetThreadContext(threadHandle, ref cx))
+            {
+                this.Status.Log("Unable to get thread context when setting instructin pointer. tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                return false;
+            }
+
+#if WIN64
+            cx.Rip = (ulong)address.ToInt64();
+#else
+            cx.Eip = (uint)address.ToInt32();
+#endif
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.SetThreadContext(threadHandle, ref cx))
+            {
+                this.Status.Log("Unable to set thread context when setting instructin pointer. tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                return false;
+            }
+
+            res = WinApi.ResumeThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log("Unable to resume thread when setting instructin pointer. tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
+            WinApi.CloseHandle(threadHandle);
+            return true;
+        }
+
+        /// <summary>
         /// Adds specified address to the Dr0 register.
         /// </summary>
         /// <param name="address">The address at which the breakpoint will be placed.</param>
