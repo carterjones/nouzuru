@@ -232,6 +232,7 @@
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
                 this.Status.Log("Unable to get thread context when setting breakpoint. tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
                 return false;
             }
 
@@ -246,6 +247,7 @@
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
                 this.Status.Log("Unable to set thread context when setting breakpoint. tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
                 return false;
             }
 
@@ -339,6 +341,7 @@
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
+                WinApi.CloseHandle(threadHandle);
                 this.Status.Log("Unable to get thread context when removing breakpoints. tid: " + this.ThreadID);
                 return false;
             }
@@ -351,6 +354,7 @@
             cx.Dr7 = 0x0;
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
+                WinApi.CloseHandle(threadHandle);
                 this.Status.Log("Unable to get thread context when removing breakpoints. tid: " + this.ThreadID);
                 return false;
             }
