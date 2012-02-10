@@ -150,7 +150,8 @@
             IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
-                this.Status.Log("Could not open thread to add hardware breakpoint. Error: " +
+                this.Status.Log(
+                    "Could not open thread to add hardware breakpoint. Error: " +
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 return false;
             }
@@ -160,7 +161,9 @@
             {
                 if (res == (uint)(-1))
                 {
-                    this.Status.Log("Unable to suspend thread when setting instructin pointer. tid: " + this.ThreadID);
+                    this.Status.Log(
+                        "Unable to suspend thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                     WinApi.CloseHandle(threadHandle);
                     return false;
                 }
@@ -170,7 +173,9 @@
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
-                this.Status.Log("Unable to get thread context when setting instructin pointer. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to get thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 WinApi.CloseHandle(threadHandle);
                 return false;
             }
@@ -183,7 +188,9 @@
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
-                this.Status.Log("Unable to set thread context when setting instructin pointer. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to set thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 WinApi.CloseHandle(threadHandle);
                 return false;
             }
@@ -193,7 +200,9 @@
             {
                 if (res == (uint)(-1))
                 {
-                    this.Status.Log("Unable to resume thread when setting instructin pointer. tid: " + this.ThreadID);
+                    this.Status.Log(
+                        "Unable to resume thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                     WinApi.CloseHandle(threadHandle);
                     return false;
                 }
@@ -222,7 +231,8 @@
             IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, (uint)this.ThreadID);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
-                this.Status.Log("Could not open thread to add hardware breakpoint. Error: " +
+                this.Status.Log(
+                    "Could not open thread to add hardware breakpoint. Error: " +
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 return false;
             }
@@ -231,7 +241,9 @@
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
-                this.Status.Log("Unable to get thread context when setting breakpoint. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to get thread context when setting breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 WinApi.CloseHandle(threadHandle);
                 return false;
             }
@@ -246,7 +258,9 @@
                 (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
-                this.Status.Log("Unable to set thread context when setting breakpoint. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to set thread context when setting breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 WinApi.CloseHandle(threadHandle);
                 return false;
             }
@@ -333,7 +347,8 @@
             IntPtr threadHandle = WinApi.OpenThread(WinApi.ThreadAccess.ALL_ACCESS, false, (uint)this.ThreadID);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
-                this.Status.Log("Could not open thread to remove hardware breakpoints. Error: " +
+                this.Status.Log(
+                    "Could not open thread to remove hardware breakpoints. Error: " +
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
             }
 
@@ -342,7 +357,9 @@
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
                 WinApi.CloseHandle(threadHandle);
-                this.Status.Log("Unable to get thread context when removing breakpoints. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to get thread context when removing breakpoints. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 return false;
             }
 
@@ -355,7 +372,9 @@
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
                 WinApi.CloseHandle(threadHandle);
-                this.Status.Log("Unable to get thread context when removing breakpoints. tid: " + this.ThreadID);
+                this.Status.Log(
+                    "Unable to get thread context when removing breakpoints. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 return false;
             }
 
