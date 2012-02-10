@@ -227,8 +227,11 @@
                 return false;
             }
 
-            WinApi.ThreadAccess thread_rights = WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT;
-            IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, (uint)this.ThreadID);
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
                 this.Status.Log(
@@ -237,8 +240,21 @@
                 return false;
             }
 
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to suspend thread when setting breakpoint. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
             WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
                 this.Status.Log(
@@ -248,7 +264,7 @@
                 return false;
             }
 
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
 #if WIN64
             cx.Dr0 = (uint)address.ToInt64();
 #else
@@ -263,6 +279,19 @@
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 WinApi.CloseHandle(threadHandle);
                 return false;
+            }
+
+            res = WinApi.ResumeThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to resume thread when setting breakpoint. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
             }
 
             WinApi.CloseHandle(threadHandle);
@@ -344,7 +373,11 @@
                 return false;
             }
 
-            IntPtr threadHandle = WinApi.OpenThread(WinApi.ThreadAccess.ALL_ACCESS, false, (uint)this.ThreadID);
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
                 this.Status.Log(
@@ -352,8 +385,21 @@
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
             }
 
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to suspend thread when removing breakpoints. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
             WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.GetThreadContext(threadHandle, ref cx))
             {
                 WinApi.CloseHandle(threadHandle);
@@ -363,7 +409,7 @@
                 return false;
             }
 
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             cx.Dr0 = 0x0;
             cx.Dr1 = 0x0;
             cx.Dr2 = 0x0;
@@ -376,6 +422,19 @@
                     "Unable to get thread context when removing breakpoints. Error: " +
                     Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
                 return false;
+            }
+
+            res = WinApi.ResumeThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to resume thread when removing breakpoints. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
             }
 
             WinApi.CloseHandle(threadHandle);
