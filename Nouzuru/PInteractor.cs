@@ -359,6 +359,25 @@
         }
 
         /// <summary>
+        /// Creates a hexidecimally formatted string from the given an address.
+        /// 32-bit processes will be 8 characters in length (excluding the prepended 0x) and 64-bit processes will be
+        /// 16 characters in length (excluding the prepended 0x).
+        /// </summary>
+        /// <param name="address">The address to be formatted.</param>
+        /// <returns>Returns a string in the format of 0xabcde098.</returns>
+        public string IntPtrToFormattedAddress(IntPtr address)
+        {
+            if (this.Is64Bit)
+            {
+                return "0x" + address.ToInt64().ToString("X").PadLeft(16, '0');
+            }
+            else
+            {
+                return "0x" + address.ToInt32().ToString("X").PadLeft(8, '0');
+            }
+        }
+
+        /// <summary>
         /// Determines if the page in which address appears is readable.
         /// </summary>
         /// <param name="address">The address to test for readability.</param>
@@ -564,25 +583,6 @@
             WinApi.ReadProcessMemory(this.ProcHandle, address, dataAddress, (uint)Marshal.SizeOf(typeof(T)), out nbr);
             structure = (T)Marshal.PtrToStructure(dataAddress, typeof(T));
             gch.Free();
-        }
-
-        /// <summary>
-        /// Creates a hexidecimally formatted string from the given an address.
-        /// 32-bit processes will be 8 characters in length (excluding the prepended 0x) and 64-bit processes will be
-        /// 16 characters in length (excluding the prepended 0x).
-        /// </summary>
-        /// <param name="address">The address to be formatted.</param>
-        /// <returns>Returns a string in the format of 0xabcde098.</returns>
-        protected string IntPtrToFormattedAddress(IntPtr address)
-        {
-            if (this.Is64Bit)
-            {
-                return "0x" + address.ToInt64().ToString("X").PadLeft(16, '0');
-            }
-            else
-            {
-                return "0x" + address.ToInt32().ToString("X").PadLeft(8, '0');
-            }
         }
 
         /// <summary>
