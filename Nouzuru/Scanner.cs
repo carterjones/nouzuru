@@ -11,6 +11,15 @@
     /// </summary>
     public class Scanner : PInteractor
     {
+        #region Fields
+
+        /// <summary>
+        /// If true, no scan has occured yet or no scan has been run since the last reset.
+        /// </summary>
+        private bool isFirstScan = true;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -106,6 +115,7 @@
         /// </summary>
         public void ResetResults()
         {
+            this.isFirstScan = true;
             for (int i = 0; i < this.Regions.Count; ++i)
             {
                 this.Regions[i].ResetMatches();
@@ -150,7 +160,7 @@
             this.Matches.Clear();
             for (int i = 0; i < this.Regions.Count; ++i)
             {
-                if (this.Regions[i].MatchHasBeenFound)
+                if (this.isFirstScan || this.Regions[i].MatchHasBeenFound)
                 {
                     singleResult = this.Regions[i].CalcMatches(value);
                     if (singleResult)
@@ -161,6 +171,8 @@
                     overallResult |= singleResult;
                 }
             }
+
+            this.isFirstScan = false;
 
             return overallResult;
         }
@@ -174,7 +186,7 @@
             if (!this.IsOpen)
             {
                 this.Status.Log(
-                    "Unable to write memory, because the target process has not been opened.",
+                    "Unable to read memory, because the target process has not been opened.",
                     Logger.Level.HIGH);
                 return false;
             }
