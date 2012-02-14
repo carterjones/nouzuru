@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Runtime.InteropServices;
     using System.Text;
     using Logger;
@@ -9,7 +10,7 @@
     /// <summary>
     /// A scanner that can be used to search a process for data.
     /// </summary>
-    public class Scanner : PInteractor
+    public class Scanner : PInteractor, INotifyPropertyChanged
     {
         #region Fields
 
@@ -17,6 +18,11 @@
         /// If true, no scan has occured yet or no scan has been run since the last reset.
         /// </summary>
         private bool isFirstScan = true;
+
+        /// <summary>
+        /// Inticates (in percent) how complete the current scan is.
+        /// </summary>
+        private int progress;
 
         #endregion
 
@@ -34,6 +40,15 @@
 
         #endregion
 
+        #region Events
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -47,6 +62,26 @@
         public int NumMatches
         {
             get { return this.Matches.Count; }
+        }
+
+        /// <summary>
+        /// Gets a value (in percent) how complete the current scan is.
+        /// </summary>
+        public int Progress
+        {
+            get
+            {
+                return this.progress;
+            }
+
+            private set
+            {
+                this.progress = value;
+                if (this.PropertyChanged != null)
+                {
+                    this.OnPropertyChanged("Progress");
+                }
+            }
         }
 
         /// <summary>
@@ -116,6 +151,7 @@
         public void ResetResults()
         {
             this.isFirstScan = true;
+            this.Progress = 0;
             for (int i = 0; i < this.Regions.Count; ++i)
             {
                 this.Regions[i].ResetMatches();
@@ -170,9 +206,12 @@
 
                     overallResult |= singleResult;
                 }
+
+                this.Progress = (int)((i / (float)this.Regions.Count) * 100);
             }
 
             this.isFirstScan = false;
+            this.Progress = 100;
 
             return overallResult;
         }
@@ -200,6 +239,18 @@
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Invoked when a property, which is tracked by another object that receives updates, is updated.
+        /// </summary>
+        /// <param name="name">The name of the property that is updated.</param>
+        protected void OnPropertyChanged(string name)
+        {
+            if (this.PropertyChanged != null)
+            {
+                this.PropertyChanged(this, new PropertyChangedEventArgs(name));
+            }
         }
 
         #endregion
