@@ -181,7 +181,8 @@
             }
 
 #if WIN64
-            cx.Rip = (ulong)address.ToInt64();
+            // TODO: fix Rip for x64
+            //cx.Rip = (ulong)address.ToInt64();
 #else
             cx.Eip = (uint)address.ToInt32();
 #endif
