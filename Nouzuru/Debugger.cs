@@ -12,7 +12,7 @@
     /// <summary>
     /// A simple, but extensible debugger class that provides core debugging traps.
     /// </summary>
-    public class Debugger : PInteractor
+    public class Debugger : Patcher
     {
         #region Fields
 
@@ -26,11 +26,6 @@
         /// The thread that is used to run the debug loop.
         /// </summary>
         private Thread debugThread;
-
-        /// <summary>
-        /// The patcher that is used to track breakpoints set by this debugger.
-        /// </summary>
-        private Patcher patcher = new Patcher();
 
         /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
@@ -131,12 +126,195 @@
 
         #region Methods
 
+        private IntPtr GetThreadHandle(uint threadId)
+        {
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, threadId);
+            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            {
+                this.Status.Log(
+                    "Could not open thread to add hardware breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
+                return IntPtr.Zero;
+            }
+            return threadHandle;
+        }
+
+        private bool PauseThread(IntPtr threadHandle)
+        {
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to suspend thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private WinApi.CONTEXT GetThreadContext(IntPtr threadHandle)
+        {
+            WinApi.CONTEXT cx = new WinApi.CONTEXT();
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.GetThreadContext(threadHandle, ref cx))
+            {
+                this.Status.Log(
+                    "Unable to get thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                return new WinApi.CONTEXT();
+            }
+
+            return cx;
+        }
+
+        private bool SetThreadContext(IntPtr threadHandle, WinApi.CONTEXT cx)
+        {
+            if (!WinApi.SetThreadContext(threadHandle, ref cx))
+            {
+                this.Status.Log(
+                    "Unable to set thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool UnpauseThread(IntPtr threadHandle)
+        {
+            uint res = WinApi.ResumeThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to resume thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         /// <summary>
         /// Sets the instruction pointer of the main thread to the specified value.
         /// </summary>
         /// <param name="address">The address to which the instruction pointer should be set.</param>
         /// <returns>Returns true if the instruction pointer was successfully set.</returns>
         public bool SetIP(IntPtr address)
+        {
+            if (!this.IsOpen)
+            {
+                return false;
+            }
+
+            IntPtr threadHandle = this.GetThreadHandle((uint)this.ThreadID);
+            if (threadHandle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            if (!this.PauseThread(threadHandle))
+            {
+                return false;
+            }
+
+            WinApi.CONTEXT cx = this.GetThreadContext(threadHandle);
+            if (cx.Equals(new WinApi.CONTEXT()))
+            {
+                return false;
+            }
+
+#if WIN64
+            // TODO: fix Rip for x64
+            //cx.Rip = (ulong)address.ToInt64();
+#else
+            cx.Eip = (uint)address.ToInt32();
+#endif
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+
+            if (!this.SetThreadContext(threadHandle, cx))
+            {
+                return false;
+            }
+
+            if (!this.UnpauseThread(threadHandle))
+            {
+                return false;
+            }
+
+            return WinApi.CloseHandle(threadHandle);
+            //return true;
+        }
+
+        /// <summary>
+        /// Sets the instruction pointer of the main thread to the specified value.
+        /// </summary>
+        /// <param name="address">The address to which the instruction pointer should be set.</param>
+        /// <returns>Returns true if the instruction pointer was successfully set.</returns>
+        public bool PrepareForSingleStep(IntPtr address)
+        {
+            if (!this.IsOpen)
+            {
+                return false;
+            }
+
+            IntPtr threadHandle = this.GetThreadHandle((uint)this.ThreadID);
+            if (threadHandle == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            if (!this.PauseThread(threadHandle))
+            {
+                return false;
+            }
+
+            WinApi.CONTEXT cx = this.GetThreadContext(threadHandle);
+            if (cx.Equals(new WinApi.CONTEXT()))
+            {
+                return false;
+            }
+
+#if WIN64
+            // TODO: fix Rip for x64
+            //cx.Rip = (ulong)address.ToInt64();
+#else
+            //cx.Eip = (uint)address.ToInt32();
+            //cx.Dr0 = (uint)address.ToInt32();
+            //cx.Dr7 = (uint)0x00000001; // enable dr0 on execute for one byte
+            cx.EFlags = 0x100;
+#endif
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+
+            if (!this.SetThreadContext(threadHandle, cx))
+            {
+                return false;
+            }
+
+            if (!this.UnpauseThread(threadHandle))
+            {
+                return false;
+            }
+
+            return WinApi.CloseHandle(threadHandle);
+            //return true;
+        }
+
+        public bool SetIP_old(IntPtr address)
         {
             if (!this.IsOpen)
             {
@@ -313,7 +491,7 @@
             }
 
             byte int3Bp = 0xcc;
-            return this.patcher.Write(address, int3Bp, Patcher.WriteOptions.SaveOldValue);
+            return this.Write(address, int3Bp, Patcher.WriteOptions.SaveOldValue);
         }
 
         /// <summary>
@@ -453,7 +631,7 @@
                 return false;
             }
 
-            return this.patcher.RestoreAll();
+            return this.RestoreAll();
         }
 
         /// <summary>
@@ -484,7 +662,7 @@
                 return false;
             }
 
-            return this.patcher.Restore(address);
+            return this.Restore(address);
         }
 
         /// <summary>
@@ -514,6 +692,10 @@
             {
                 return;
             }
+
+            // Set ignoreNextBreakpoint to true to account for the first breakpoint that is encountered when attaching
+            // to a process in debug mode.
+            bool ignoreNextBreakpoint = true;
 
 #if DEBUG
             this.Status.Log("pid: " + this.PID);
@@ -561,6 +743,7 @@
             threadHandle = IntPtr.Zero;
             IntPtr justBrokenAddress = IntPtr.Zero;
             uint prevInstSize = 0;
+            bool restoreBreakpointOnExceptionSingleStep = false;
 
             while (this.Proc.HasExited == false && this.allowedToDebug == true)
             {
@@ -573,7 +756,7 @@
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 threadHandle = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
                                 WinApi.SuspendThread(threadHandle);
-#if _M_X64
+#if WIN64
                                 cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
                                     WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
 #else
@@ -584,7 +767,7 @@
                                 WinApi.ResumeThread(threadHandle);
                                 if (this.LogRegistersOnBreakpoint)
                                 {
-#if _M_X64
+#if WIN64
                                     this.Status.Log(
                                         "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
                                         "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
@@ -609,7 +792,7 @@
                                         "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
                                         "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
                                 }
-#if _M_X64
+#if WIN64
                                 prevInstSize = GetPreviousInstructionSize(new IntPtr(cx.Rip));
                                 if (PrintAccesses)
                                 {
@@ -620,12 +803,22 @@
                                 }
 #else
                                 prevInstSize = this.GetPreviousInstructionSize(new IntPtr(cx.Eip));
+                                IntPtr prevInstruction = new IntPtr(cx.Eip - prevInstSize);
                                 if (this.LogBreakpointAccesses)
                                 {
                                     this.Status.Log(
                                         "Modifying address is " +
-                                        this.IntPtrToFormattedAddress(new IntPtr((cx.Eip - prevInstSize))) +
+                                        this.IntPtrToFormattedAddress(prevInstruction) +
                                         " with instruction length " + prevInstSize);
+                                }
+
+                                if (restoreBreakpointOnExceptionSingleStep == true)
+                                {
+                                    this.Write(prevInstruction, (byte)0xcc, WriteOptions.None);
+                                    this.Status.Log(
+                                        "Restoring breakpoint at " +
+                                        this.IntPtrToFormattedAddress(de.u.Exception.ExceptionRecord.ExceptionAddress));
+                                    restoreBreakpointOnExceptionSingleStep = false;
                                 }
 #endif
                                 break;
@@ -637,7 +830,19 @@
                                 break;
 
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
-                                break;
+                                if (ignoreNextBreakpoint)
+                                {
+                                    ignoreNextBreakpoint = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    this.Restore(de.u.Exception.ExceptionRecord.ExceptionAddress, false);
+                                    this.SetIP(de.u.Exception.ExceptionRecord.ExceptionAddress);
+                                    this.PrepareForSingleStep(de.u.Exception.ExceptionRecord.ExceptionAddress);
+                                    restoreBreakpointOnExceptionSingleStep = true;
+                                    break;
+                                }
 
                             case (uint)WinApi.ExceptionType.DATATYPE_MISALIGNMENT:
                                 break;
@@ -688,7 +893,7 @@
                                 break;
 
                             default:
-#if _M_X64
+#if WIN64
                                 // TODO: figure out why this occurs here in 64 bit mode, rather than up higher
                                 logger.Log("stepped.");
                                 hThread = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
