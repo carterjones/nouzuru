@@ -741,7 +741,7 @@
             bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
             WinApi.CloseHandle(threadHandle);
             threadHandle = IntPtr.Zero;
-            IntPtr justBrokenAddress = IntPtr.Zero;
+            IntPtr breakpointAddressJustHit = IntPtr.Zero;
             uint prevInstSize = 0;
             bool restoreBreakpointOnExceptionSingleStep = false;
 
@@ -814,10 +814,21 @@
 
                                 if (restoreBreakpointOnExceptionSingleStep == true)
                                 {
-                                    this.Write(prevInstruction, (byte)0xcc, WriteOptions.None);
-                                    this.Status.Log(
-                                        "Restoring breakpoint at " +
-                                        this.IntPtrToFormattedAddress(de.u.Exception.ExceptionRecord.ExceptionAddress));
+                                    if (breakpointAddressJustHit != IntPtr.Zero)
+                                    {
+                                        this.Write(breakpointAddressJustHit, (byte)0xcc, WriteOptions.None);
+                                        this.Status.Log(
+                                            "Restoring breakpoint at " +
+                                            this.IntPtrToFormattedAddress(breakpointAddressJustHit));
+                                        breakpointAddressJustHit = IntPtr.Zero;
+                                    }
+                                    else
+                                    {
+                                        this.Status.Log(
+                                            "Unexpected series of events during breakpoint restoration.",
+                                            Logger.Logger.Level.HIGH);
+                                    }
+
                                     restoreBreakpointOnExceptionSingleStep = false;
                                 }
 #endif
@@ -840,6 +851,7 @@
                                     this.Restore(de.u.Exception.ExceptionRecord.ExceptionAddress, false);
                                     this.SetIP(de.u.Exception.ExceptionRecord.ExceptionAddress);
                                     this.PrepareForSingleStep(de.u.Exception.ExceptionRecord.ExceptionAddress);
+                                    breakpointAddressJustHit = de.u.Exception.ExceptionRecord.ExceptionAddress;
                                     restoreBreakpointOnExceptionSingleStep = true;
                                     break;
                                 }
