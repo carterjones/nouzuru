@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bunseki", "..\bunseki\Bunse
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Distorm3cs", "..\distorm3cs\Distorm3cs\Distorm3cs.csproj", "{27C84C77-6F54-481F-8598-639AC768753D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CLI", "CLI\CLI.csproj", "{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -71,6 +73,14 @@ Global
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x64.Build.0 = Release|x64
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x86.ActiveCfg = Release|x86
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x86.Build.0 = Release|x86
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Debug|x64.ActiveCfg = Debug|x64
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Debug|x64.Build.0 = Debug|x64
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Debug|x86.ActiveCfg = Debug|x86
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Debug|x86.Build.0 = Debug|x86
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Release|x64.ActiveCfg = Release|x64
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Release|x64.Build.0 = Release|x64
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Release|x86.ActiveCfg = Release|x86
+		{9474A6E5-D8DF-4CFA-B14A-76D51BBAC24C}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
