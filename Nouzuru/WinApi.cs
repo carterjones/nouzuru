@@ -23,13 +23,13 @@
     {
         #region Constants
 
-        internal static uint INFINITE = 0xFFFFFFFF;
+        public static uint INFINITE = 0xFFFFFFFF;
 
         #endregion
 
         #region Delegates
 
-        internal delegate uint PTHREAD_START_ROUTINE(IntPtr lpThreadParameter);
+        public delegate uint PTHREAD_START_ROUTINE(IntPtr lpThreadParameter);
 
         #endregion
 
@@ -66,7 +66,7 @@
         }
 
         [Flags]
-        internal enum CONTEXT_FLAGS : uint
+        public enum CONTEXT_FLAGS : uint
         {
             i386 = 0x10000,
             i486 = 0x10000,
@@ -82,13 +82,13 @@
                 CONTEXT_FLAGS.FLOATING_POINT | CONTEXT_FLAGS.DEBUG_REGISTERS | CONTEXT_FLAGS.EXTENDED_REGISTERS
         }
 
-        internal enum DbgCode : uint
+        public enum DbgCode : uint
         {
             CONTINUE = 0x00010002,
             EXCEPTION_NOT_HANDLED = 0x80010001
         }
 
-        internal enum DebugEventType : uint
+        public enum DebugEventType : uint
         {
             EXCEPTION_DEBUG_EVENT = 1,
             CREATE_THREAD_DEBUG_EVENT = 2,
@@ -101,7 +101,7 @@
             RIP_EVENT = 9
         }
 
-        internal enum ExceptionType : uint
+        public enum ExceptionType : uint
         {
             GUARD_PAGE = 0x80000001,
             DATATYPE_MISALIGNMENT = 0x80000002,
@@ -128,7 +128,7 @@
         }
 
         [Flags]
-        internal enum MemoryState : uint
+        public enum MemoryState : uint
         {
             MEM_COMMIT = 0x1000,
             MEM_FREE = 0x10000,
@@ -137,7 +137,7 @@
         }
 
         [Flags]
-        internal enum ProcessRights : uint
+        public enum ProcessRights : uint
         {
             ALL_ACCESS = 0x001F0FFF,
             TERMINATE = 0x00000001,
@@ -155,7 +155,7 @@
         }
 
         [Flags]
-        internal enum ThreadAccess : uint
+        public enum ThreadAccess : uint
         {
             TERMINATE = 0x0001,
             SUSPEND_RESUME = 0x0002,
@@ -182,13 +182,13 @@
         #region Methods
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool CloseHandle(IntPtr hObject);
+        public static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool ContinueDebugEvent(uint dwProcessId, uint dwThreadId, DbgCode dwContinueStatus);
+        public static extern bool ContinueDebugEvent(uint dwProcessId, uint dwThreadId, DbgCode dwContinueStatus);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr CreateRemoteThread(
+        public static extern IntPtr CreateRemoteThread(
             IntPtr hProcess,
             IntPtr lpThreadAttributes,
             uint dwStackSize,
@@ -198,44 +198,44 @@
             out uint lpThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool DebugActiveProcess(uint dwProcessId);
+        public static extern bool DebugActiveProcess(uint dwProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool DebugActiveProcessStop(uint dwProcessId);
+        public static extern bool DebugActiveProcessStop(uint dwProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool DebugSetProcessKillOnExit(bool killOnExit);
+        public static extern bool DebugSetProcessKillOnExit(bool killOnExit);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr GetModuleHandle(string lpModuleName);
+        public static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern void GetNativeSystemInfo(out SYSTEM_INFO lpSystemInfo);
+        public static extern void GetNativeSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+        public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
+        public static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
+        public static extern bool GetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool IsWow64Process(IntPtr hProcess, out bool wow64Process);
+        public static extern bool IsWow64Process(IntPtr hProcess, out bool wow64Process);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr OpenProcess(ProcessRights dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+        public static extern IntPtr OpenProcess(ProcessRights dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
+        public static extern IntPtr OpenThread(ThreadAccess dwDesiredAccess, bool bInheritHandle, uint dwThreadId);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool ReadProcessMemory(
+        public static extern bool ReadProcessMemory(
             IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool ReadProcessMemory(
+        public static extern bool ReadProcessMemory(
             IntPtr hProcess,
             IntPtr lpBaseAddress,
             [Out, MarshalAs(UnmanagedType.AsAny)] object lpBuffer,
@@ -243,31 +243,31 @@
             out uint lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern uint ResumeThread(IntPtr hThread);
+        public static extern uint ResumeThread(IntPtr hThread);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool SetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
+        public static extern bool SetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern uint SuspendThread(IntPtr hThread);
+        public static extern uint SuspendThread(IntPtr hThread);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool ReadProcessMemory(
+        public static extern bool ReadProcessMemory(
             IntPtr hProcess, IntPtr lpBaseAddress, IntPtr lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern IntPtr VirtualAllocEx(
+        public static extern IntPtr VirtualAllocEx(
             IntPtr hProcess, IntPtr lpAddress, uint dwSize, MemoryState flAllocationType, MemoryProtect flProtect);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool VirtualQueryEx(
+        public static extern bool VirtualQueryEx(
             IntPtr hProcess, IntPtr lpAddress, out MEMORY_BASIC_INFORMATION lpBuffer, uint dwLength);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
+        public static extern bool WaitForDebugEvent(ref DEBUG_EVENT lpDebugEvent, uint dwMilliseconds);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern bool WriteProcessMemory(
+        public static extern bool WriteProcessMemory(
             IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, uint nSize, out uint lpNumberOfBytesWritten);
 
         #endregion
@@ -280,204 +280,204 @@
         [StructLayout(LayoutKind.Sequential)]
         public struct MEMORY_BASIC_INFORMATION
         {
-            internal IntPtr BaseAddress;
-            internal IntPtr AllocationBase;
-            internal uint AllocationProtect;
-            internal IntPtr RegionSize;
-            internal MemoryState State;
-            internal MemoryProtect Protect;
-            internal MemoryType Type;
+            public IntPtr BaseAddress;
+            public IntPtr AllocationBase;
+            public uint AllocationProtect;
+            public IntPtr RegionSize;
+            public MemoryState State;
+            public MemoryProtect Protect;
+            public MemoryType Type;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct CONTEXT
+        public struct CONTEXT
         {
-            internal CONTEXT_FLAGS ContextFlags;
-            internal uint Dr0;
-            internal uint Dr1;
-            internal uint Dr2;
-            internal uint Dr3;
-            internal uint Dr6;
-            internal uint Dr7;
-            internal FLOATING_SAVE_AREA FloatSave;
-            internal uint SegGs;
-            internal uint SegFs;
-            internal uint SegEs;
-            internal uint SegDs;
-            internal uint Edi;
-            internal uint Esi;
-            internal uint Ebx;
-            internal uint Edx;
-            internal uint Ecx;
-            internal uint Eax;
-            internal uint Ebp;
-            internal uint Eip;
-            internal uint SegCs;
-            internal uint EFlags;
-            internal uint Esp;
-            internal uint SegSs;
+            public CONTEXT_FLAGS ContextFlags;
+            public uint Dr0;
+            public uint Dr1;
+            public uint Dr2;
+            public uint Dr3;
+            public uint Dr6;
+            public uint Dr7;
+            public FLOATING_SAVE_AREA FloatSave;
+            public uint SegGs;
+            public uint SegFs;
+            public uint SegEs;
+            public uint SegDs;
+            public uint Edi;
+            public uint Esi;
+            public uint Ebx;
+            public uint Edx;
+            public uint Ecx;
+            public uint Eax;
+            public uint Ebp;
+            public uint Eip;
+            public uint SegCs;
+            public uint EFlags;
+            public uint Esp;
+            public uint SegSs;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
-            internal byte[] ExtendedRegisters;
+            public byte[] ExtendedRegisters;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct CREATE_PROCESS_DEBUG_INFO
+        public struct CREATE_PROCESS_DEBUG_INFO
         {
-            internal IntPtr hFile;
-            internal IntPtr hProcess;
-            internal IntPtr hThread;
-            internal IntPtr lpBaseOfImage;
-            internal uint dwDebugInfoFileOffset;
-            internal uint nDebugInfoSize;
-            internal IntPtr lpThreadLocalBase;
-            internal PTHREAD_START_ROUTINE lpStartAddress;
-            internal IntPtr lpImageName;
-            internal ushort fUnicode;
+            public IntPtr hFile;
+            public IntPtr hProcess;
+            public IntPtr hThread;
+            public IntPtr lpBaseOfImage;
+            public uint dwDebugInfoFileOffset;
+            public uint nDebugInfoSize;
+            public IntPtr lpThreadLocalBase;
+            public PTHREAD_START_ROUTINE lpStartAddress;
+            public IntPtr lpImageName;
+            public ushort fUnicode;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct CREATE_THREAD_DEBUG_INFO
+        public struct CREATE_THREAD_DEBUG_INFO
         {
-            internal IntPtr hThread;
-            internal IntPtr lpThreadLocalBase;
-            internal PTHREAD_START_ROUTINE lpStartAddress;
+            public IntPtr hThread;
+            public IntPtr lpThreadLocalBase;
+            public PTHREAD_START_ROUTINE lpStartAddress;
         }
 
         [StructLayout(LayoutKind.Explicit)]
-        internal struct DEBUG_EVENT_Union
+        public struct DEBUG_EVENT_Union
         {
             [FieldOffset(0)]
-            internal EXCEPTION_DEBUG_INFO Exception;
+            public EXCEPTION_DEBUG_INFO Exception;
             /*
             [FieldOffset(0)]
-            internal CREATE_THREAD_DEBUG_INFO CreateThread;
+            public CREATE_THREAD_DEBUG_INFO CreateThread;
 
             [FieldOffset(0)]
-            internal CREATE_PROCESS_DEBUG_INFO CreateProcessInfo;
+            public CREATE_PROCESS_DEBUG_INFO CreateProcessInfo;
 
             [FieldOffset(0)]
-            internal EXIT_THREAD_DEBUG_INFO ExitThread;
+            public EXIT_THREAD_DEBUG_INFO ExitThread;
 
             [FieldOffset(0)]
-            internal EXIT_PROCESS_DEBUG_INFO ExitProcess;
+            public EXIT_PROCESS_DEBUG_INFO ExitProcess;
 
             [FieldOffset(0)]
-            internal LOAD_DLL_DEBUG_INFO LoadDll;
+            public LOAD_DLL_DEBUG_INFO LoadDll;
 
             [FieldOffset(0)]
-            internal UNLOAD_DLL_DEBUG_INFO UnloadDll;
+            public UNLOAD_DLL_DEBUG_INFO UnloadDll;
 
             [FieldOffset(0)]
-            internal OUTPUT_DEBUG_STRING_INFO DebugString;
+            public OUTPUT_DEBUG_STRING_INFO DebugString;
 
             [FieldOffset(0)]
-            internal RIP_INFO RipInfo;*/
+            public RIP_INFO RipInfo;*/
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct DEBUG_EVENT
+        public struct DEBUG_EVENT
         {
-            internal uint dwDebugEventCode;
-            internal uint dwProcessId;
-            internal uint dwThreadId;
-            internal DEBUG_EVENT_Union u;
+            public uint dwDebugEventCode;
+            public uint dwProcessId;
+            public uint dwThreadId;
+            public DEBUG_EVENT_Union u;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct EXCEPTION_DEBUG_INFO
+        public struct EXCEPTION_DEBUG_INFO
         {
-            internal EXCEPTION_RECORD ExceptionRecord;
-            internal uint dwFirstChance;
+            public EXCEPTION_RECORD ExceptionRecord;
+            public uint dwFirstChance;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct EXCEPTION_RECORD
+        public struct EXCEPTION_RECORD
         {
-            internal uint ExceptionCode;
-            internal uint ExceptionFlags;
-            internal IntPtr ExceptionRecord;
-            internal IntPtr ExceptionAddress;
-            internal uint NumberParameters;
+            public uint ExceptionCode;
+            public uint ExceptionFlags;
+            public IntPtr ExceptionRecord;
+            public IntPtr ExceptionAddress;
+            public uint NumberParameters;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
-            internal uint[] ExceptionInformation;
+            public uint[] ExceptionInformation;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct EXIT_PROCESS_DEBUG_INFO
+        public struct EXIT_PROCESS_DEBUG_INFO
         {
-            internal uint dwExitCode;
+            public uint dwExitCode;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct EXIT_THREAD_DEBUG_INFO
+        public struct EXIT_THREAD_DEBUG_INFO
         {
-            internal uint dwExitCode;
+            public uint dwExitCode;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct FLOATING_SAVE_AREA
+        public struct FLOATING_SAVE_AREA
         {
-            internal uint ControlWord;
-            internal uint StatusWord;
-            internal uint TagWord;
-            internal uint ErrorOffset;
-            internal uint ErrorSelector;
-            internal uint DataOffset;
-            internal uint DataSelector;
+            public uint ControlWord;
+            public uint StatusWord;
+            public uint TagWord;
+            public uint ErrorOffset;
+            public uint ErrorSelector;
+            public uint DataOffset;
+            public uint DataSelector;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 80)]
-            internal byte[] RegisterArea;
-            internal uint Cr0NpxState;
+            public byte[] RegisterArea;
+            public uint Cr0NpxState;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct LOAD_DLL_DEBUG_INFO
+        public struct LOAD_DLL_DEBUG_INFO
         {
-            internal IntPtr hFile;
-            internal IntPtr lpBaseOfDll;
-            internal uint dwDebugInfoFileOffset;
-            internal uint nDebugInfoSize;
-            internal IntPtr lpImageName;
-            internal ushort fUnicode;
+            public IntPtr hFile;
+            public IntPtr lpBaseOfDll;
+            public uint dwDebugInfoFileOffset;
+            public uint nDebugInfoSize;
+            public IntPtr lpImageName;
+            public ushort fUnicode;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct OUTPUT_DEBUG_STRING_INFO
+        public struct OUTPUT_DEBUG_STRING_INFO
         {
             [MarshalAs(UnmanagedType.LPStr)]
-            internal string lpDebugStringData;
-            internal ushort fUnicode;
-            internal ushort nDebugStringLength;
+            public string lpDebugStringData;
+            public ushort fUnicode;
+            public ushort nDebugStringLength;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct RIP_INFO
+        public struct RIP_INFO
         {
-            internal uint dwError;
-            internal uint dwType;
+            public uint dwError;
+            public uint dwType;
         }
 
         [SuppressMessage("Microsoft.StyleCop.CSharp.OrderingRules", "SA1202:ElementsMustBeOrderedByAccess",
             Justification = "The ordering must not change within structures, since this would affect functionality.")]
         [StructLayout(LayoutKind.Sequential)]
-        internal struct SYSTEM_INFO
+        public struct SYSTEM_INFO
         {
-            internal ushort processorArchitecture;
+            public ushort processorArchitecture;
             private ushort reserved;
-            internal uint pageSize;
-            internal IntPtr minimumApplicationAddress;
-            internal IntPtr maximumApplicationAddress;
-            internal IntPtr activeProcessorMask;
-            internal uint numberOfProcessors;
-            internal uint processorType;
-            internal uint allocationGranularity;
-            internal ushort processorLevel;
-            internal ushort processorRevision;
+            public uint pageSize;
+            public IntPtr minimumApplicationAddress;
+            public IntPtr maximumApplicationAddress;
+            public IntPtr activeProcessorMask;
+            public uint numberOfProcessors;
+            public uint processorType;
+            public uint allocationGranularity;
+            public ushort processorLevel;
+            public ushort processorRevision;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        internal struct UNLOAD_DLL_DEBUG_INFO
+        public struct UNLOAD_DLL_DEBUG_INFO
         {
-            internal IntPtr lpBaseOfDll;
+            public IntPtr lpBaseOfDll;
         }
 
         #endregion
