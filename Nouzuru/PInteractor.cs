@@ -87,6 +87,11 @@
         }
 
         /// <summary>
+        /// Gets or sets a .NET Process instance that points to the target process.
+        /// </summary>
+        public Process Proc { get; protected set; }
+
+        /// <summary>
         /// Gets or sets a handle with special rights to the target process. This should be used when more rights are
         /// needed to a process than the rights returned by a C# Process object via the Process.Handle IntPtr.
         /// </summary>
@@ -95,11 +100,6 @@
         /// C# Process library. These two handles have completetly separate purposes.
         /// </remarks>
         protected IntPtr ProcHandle { get; set; }
-
-        /// <summary>
-        /// Gets or sets a .NET Process instance that points to the target process.
-        /// </summary>
-        protected Process Proc { get; set; }
 
         /// <summary>
         /// Gets a logger used to report status updates, errors, etc.
