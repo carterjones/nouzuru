@@ -111,6 +111,12 @@
             }
         }
 
+        protected bool RestoreBreakpointOnExceptionSingleStep { get; set; }
+
+        protected IntPtr BreakpointAddressJustHit { get; set; }
+
+        protected bool IgnoreNextBreakpoint { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether breakpoint accesses will be logged.
         /// </summary>
@@ -682,6 +688,389 @@
             return res;
         }
 
+        #region Debug Events
+
+        /// <summary>
+        /// Handles the CREATE_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the CREATE_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXIT_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXIT_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the LOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the UNLOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the OUTPUT_DEBUG_STRING_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the RIP_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        #endregion
+
+        #region Debug Exceptions
+
+        /// <summary>
+        /// Handles the EXCEPTION_ACCESS_VIOLATION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnAccessViolationDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_ARRAY_BOUNDS_EXCEEDED debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnArrayBoundsExceededDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_BREAKPOINT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.IgnoreNextBreakpoint)
+            {
+                this.IgnoreNextBreakpoint = false;
+            }
+            else
+            {
+                this.Restore(de.u.Exception.ExceptionRecord.ExceptionAddress, false);
+                this.SetIP(de.u.Exception.ExceptionRecord.ExceptionAddress);
+                this.PrepareForSingleStep(de.u.Exception.ExceptionRecord.ExceptionAddress);
+                this.BreakpointAddressJustHit = de.u.Exception.ExceptionRecord.ExceptionAddress;
+                this.RestoreBreakpointOnExceptionSingleStep = true;
+            }
+
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_DATATYPE_MISALIGNMENT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnDatatypeMisalignmentDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_DENORMAL_OPERAND debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltDenormalOperandDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_DIVIDE_BY_ZERO debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_INEXACT_RESULT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltInexactResultDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_INVALID_OPERATION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltInvalidOperationDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltOverflowDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_STACK_CHECK debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltStackCheckDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_FLT_UNDERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnFltUnderflowDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_ILLEGAL_INSTRUCTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnIllegalInstructionDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_IN_PAGE_ERROR debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnInPageErrorDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_INT_DIVIDE_BY_ZERO debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnIntDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_INT_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnIntOverflowDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_INVALID_DISPOSITION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnInvalidDispositionDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_NONCONTINUABLE_EXCEPTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnNoncontinuableExceptionDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_PRIV_INSTRUCTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnPrivInstructionDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_SINGLE_STEP debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            WinApi.ThreadAccess thread_rights =
+                WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT | WinApi.ThreadAccess.SUSPEND_RESUME;
+            WinApi.CONTEXT cx = new WinApi.CONTEXT();
+            IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
+            WinApi.SuspendThread(threadHandle);
+#if WIN64
+                                cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
+                                    WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+#else
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
+                WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS | WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+#endif
+            WinApi.GetThreadContext(threadHandle, ref cx);
+            WinApi.ResumeThread(threadHandle);
+            if (this.LogRegistersOnBreakpoint)
+            {
+#if WIN64
+                                    this.Status.Log(
+                                        "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
+                                        "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
+                                        "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
+                                        "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
+                                        "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
+                                        "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
+#else
+                this.Status.Log(
+                    "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
+                    "ebx:" + cx.Ebx.ToString("X").PadLeft(8, '0') +
+                    "ecx:" + cx.Ecx.ToString("X").PadLeft(8, '0') +
+                    "edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
+                    "eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
+                    "ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
+#endif
+                this.Status.Log(
+                    "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
+                    "dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
+                    "dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
+                    "dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
+                    "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
+                    "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
+            }
+#if WIN64
+                                prevInstSize = GetPreviousInstructionSize(new IntPtr(cx.Rip));
+                                if (PrintAccesses)
+                                {
+                                    logger.Log(
+                                        "Modifying address is " +
+                                        this.IntPtrToFormattedAddress(new IntPtr((cx.Rip - prevInstSize))) +
+                                        " with instruction length " + prevInstSize);
+                                }
+#else
+            uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr(cx.Eip));
+            IntPtr prevInstruction = new IntPtr(cx.Eip - prevInstSize);
+            if (this.LogBreakpointAccesses)
+            {
+                this.Status.Log(
+                    "Modifying address is " +
+                    this.IntPtrToFormattedAddress(prevInstruction) +
+                    " with instruction length " + prevInstSize);
+            }
+
+            if (this.RestoreBreakpointOnExceptionSingleStep == true)
+            {
+                // TODO: eventually replace breakpointAddressJustHit with a check of Dr6.
+                if (this.BreakpointAddressJustHit != IntPtr.Zero)
+                {
+                    this.Write(this.BreakpointAddressJustHit, (byte)0xcc, WriteOptions.None);
+                    this.Status.Log(
+                        "Restoring breakpoint at " +
+                        this.IntPtrToFormattedAddress(this.BreakpointAddressJustHit));
+                    this.BreakpointAddressJustHit = IntPtr.Zero;
+                }
+                else
+                {
+                    this.Status.Log(
+                        "Unexpected series of events during breakpoint restoration.",
+                        Logger.Logger.Level.HIGH);
+                }
+
+                this.RestoreBreakpointOnExceptionSingleStep = false;
+            }
+#endif
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
+        /// Handles the EXCEPTION_STACK_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnStackOverflowDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        #endregion
+
         /// <summary>
         /// This is the main debug loop, which is called as a single thread that attaches to the target process, using
         /// debugging privileges.
@@ -693,9 +1082,9 @@
                 return;
             }
 
-            // Set ignoreNextBreakpoint to true to account for the first breakpoint that is encountered when attaching
+            // Set IgnoreNextBreakpoint to true to account for the first breakpoint that is encountered when attaching
             // to a process in debug mode.
-            bool ignoreNextBreakpoint = true;
+            this.IgnoreNextBreakpoint = true;
 
 #if DEBUG
             this.Status.Log("pid: " + this.PID);
@@ -741,9 +1130,6 @@
             bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
             WinApi.CloseHandle(threadHandle);
             threadHandle = IntPtr.Zero;
-            IntPtr breakpointAddressJustHit = IntPtr.Zero;
-            uint prevInstSize = 0;
-            bool restoreBreakpointOnExceptionSingleStep = false;
 
             while (this.Proc.HasExited == false && this.allowedToDebug == true)
             {
@@ -754,154 +1140,83 @@
                         switch (de.u.Exception.ExceptionRecord.ExceptionCode)
                         {
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
-                                threadHandle = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
-                                WinApi.SuspendThread(threadHandle);
-#if WIN64
-                                cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                                    WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-#else
-                                cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                                    WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS | WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-#endif
-                                WinApi.GetThreadContext(threadHandle, ref cx);
-                                WinApi.ResumeThread(threadHandle);
-                                if (this.LogRegistersOnBreakpoint)
-                                {
-#if WIN64
-                                    this.Status.Log(
-                                        "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
-                                        "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
-                                        "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
-                                        "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
-                                        "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
-                                        "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
-#else
-                                    this.Status.Log(
-                                        "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
-                                        "ebx:" + cx.Ebx.ToString("X").PadLeft(8, '0') +
-                                        "ecx:" + cx.Ecx.ToString("X").PadLeft(8, '0') +
-                                        "edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
-                                        "eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
-                                        "ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
-#endif
-                                    this.Status.Log(
-                                        "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
-                                        "dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
-                                        "dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
-                                        "dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
-                                        "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
-                                        "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
-                                }
-#if WIN64
-                                prevInstSize = GetPreviousInstructionSize(new IntPtr(cx.Rip));
-                                if (PrintAccesses)
-                                {
-                                    logger.Log(
-                                        "Modifying address is " +
-                                        this.IntPtrToFormattedAddress(new IntPtr((cx.Rip - prevInstSize))) +
-                                        " with instruction length " + prevInstSize);
-                                }
-#else
-                                prevInstSize = this.GetPreviousInstructionSize(new IntPtr(cx.Eip));
-                                IntPtr prevInstruction = new IntPtr(cx.Eip - prevInstSize);
-                                if (this.LogBreakpointAccesses)
-                                {
-                                    this.Status.Log(
-                                        "Modifying address is " +
-                                        this.IntPtrToFormattedAddress(prevInstruction) +
-                                        " with instruction length " + prevInstSize);
-                                }
-
-                                if (restoreBreakpointOnExceptionSingleStep == true)
-                                {
-                                    if (breakpointAddressJustHit != IntPtr.Zero)
-                                    {
-                                        this.Write(breakpointAddressJustHit, (byte)0xcc, WriteOptions.None);
-                                        this.Status.Log(
-                                            "Restoring breakpoint at " +
-                                            this.IntPtrToFormattedAddress(breakpointAddressJustHit));
-                                        breakpointAddressJustHit = IntPtr.Zero;
-                                    }
-                                    else
-                                    {
-                                        this.Status.Log(
-                                            "Unexpected series of events during breakpoint restoration.",
-                                            Logger.Logger.Level.HIGH);
-                                    }
-
-                                    restoreBreakpointOnExceptionSingleStep = false;
-                                }
-#endif
+                                continueStatus = OnSingleStepDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ACCESS_VIOLATION:
+                                continueStatus = OnAccessViolationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ARRAY_BOUNDS_EXCEEDED:
+                                continueStatus = OnArrayBoundsExceededDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
-                                if (ignoreNextBreakpoint)
-                                {
-                                    ignoreNextBreakpoint = false;
-                                    break;
-                                }
-                                else
-                                {
-                                    this.Restore(de.u.Exception.ExceptionRecord.ExceptionAddress, false);
-                                    this.SetIP(de.u.Exception.ExceptionRecord.ExceptionAddress);
-                                    this.PrepareForSingleStep(de.u.Exception.ExceptionRecord.ExceptionAddress);
-                                    breakpointAddressJustHit = de.u.Exception.ExceptionRecord.ExceptionAddress;
-                                    restoreBreakpointOnExceptionSingleStep = true;
-                                    break;
-                                }
+                                continueStatus = OnBreakpointDebugException(ref de);
+                                break;
 
                             case (uint)WinApi.ExceptionType.DATATYPE_MISALIGNMENT:
+                                continueStatus = OnDatatypeMisalignmentDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DENORMAL_OPERAND:
+                                continueStatus = OnFltDenormalOperandDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DIVIDE_BY_ZERO:
+                                continueStatus = OnFltDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INEXACT_RESULT:
+                                continueStatus = OnFltInexactResultDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INVALID_OPERATION:
+                                continueStatus = OnFltInvalidOperationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_OVERFLOW:
+                                continueStatus = OnFltOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_STACK_CHECK:
+                                continueStatus = OnFltStackCheckDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_UNDERFLOW:
+                                continueStatus = OnFltUnderflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ILLEGAL_INSTRUCTION:
+                                continueStatus = OnIllegalInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.IN_PAGE_ERROR:
+                                continueStatus = OnInPageErrorDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_DIVIDE_BY_ZERO:
+                                continueStatus = OnIntDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_OVERFLOW:
+                                continueStatus = OnIntOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INVALID_DISPOSITION:
+                                continueStatus = OnInvalidDispositionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.NONCONTINUABLE_EXCEPTION:
+                                continueStatus = OnNoncontinuableExceptionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.PRIV_INSTRUCTION:
+                                continueStatus = OnPrivInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
+                                continueStatus = OnStackOverflowDebugException(ref de);
                                 break;
 
                             default:
@@ -1034,90 +1349,6 @@
             // Return nothing if a compatible instruction is not found.
             return 0;
         }
-
-        #region Debug Events
-
-        /// <summary>
-        /// Handles the CREATE_THREAD_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the CREATE_PROCESS_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the EXIT_THREAD_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the EXIT_PROCESS_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the LOAD_DLL_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the UNLOAD_DLL_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the OUTPUT_DEBUG_STRING_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        /// <summary>
-        /// Handles the RIP_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        private WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            return WinApi.DbgCode.CONTINUE;
-        }
-
-        #endregion
         
         #endregion
     }
