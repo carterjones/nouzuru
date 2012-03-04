@@ -22,7 +22,12 @@
         /// <summary>
         /// Gets or sets the decomposed instructions found within the memory page.
         /// </summary>
-        public Distorm.DInst[] Instructions { get; set; }
+        public Distorm.DInst[] InstructionsDecomposed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the disassembled instructions found within the memory page.
+        /// </summary>
+        public List<string> InstructionsDisassembled { get; set; }
 
         /// <summary>
         /// Gets the size of the memory page.

@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
     using Distorm3cs;
 
@@ -11,6 +12,16 @@
     /// </summary>
     public class BasicBlock
     {
+        #region Fields
+
+        /// <summary>
+        /// A counter that stores the number of basic blocks that have been made. This is used for generating a unique
+        /// ID for each basic block.
+        /// </summary>
+        private static ulong numBlocksMade = 0;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -18,9 +29,11 @@
         /// </summary>
         public BasicBlock()
         {
-            this.Instructions = new List<Distorm.DInst>();
+            this.InstructionsDecomposed = new List<Distorm.DInst>();
+            this.InstructionsDisassembled = new List<string>();
             this.Previous = new List<BasicBlock>();
             this.Next = new List<BasicBlock>();
+            this.ID = numBlocksMade++;
         }
 
         #endregion
@@ -28,9 +41,14 @@
         #region Properties
 
         /// <summary>
-        /// Gets or sets the list of instructions in this basic block.
+        /// Gets or sets the list of decomposed instructions in this basic block.
         /// </summary>
-        public List<Distorm.DInst> Instructions { get; set; }
+        public List<Distorm.DInst> InstructionsDecomposed { get; set; }
+
+        /// <summary>
+        /// Gets or sets the list of disassembled instructions in this basic block.
+        /// </summary>
+        public List<string> InstructionsDisassembled { get; set; }
 
         /// <summary>
         /// Gets or sets a list of basic blocks that connects to this basic block.
@@ -42,16 +60,56 @@
         /// </summary>
         public List<BasicBlock> Next { get; set; }
 
+        /// <summary>
+        /// Gets the unique ID of this basic block.
+        /// </summary>
+        public ulong ID { get; private set; }
+
         #endregion
 
         #region Methods
+        
+        /// <summary>
+        /// Generates a new basic block that starts at the supplied base address.
+        /// </summary>
+        /// <param name="p">The process interactor used to read data from the target.</param>
+        /// <param name="baseAddress">The base address of the basic block.</param>
+        /// <param name="blocks">
+        /// A set of basic blocks that relate to the current block through either direct or indirect connections.
+        /// </param>
+        /// <param name="maxDepth">
+        /// The maximum number of code flow indirections to be followed. If set to -1, no maximum indirection count is
+        /// enforced.
+        /// </param>
+        /// <returns>Returns a basic block that starts at the supplied address.</returns>
+        public static BasicBlock GenerateBlock(
+            PInteractor p,
+            IntPtr baseAddress,
+            out HashSet<BasicBlock> blocks,
+            long maxDepth = -1)
+        {
+            SysInteractor.Init();
+            blocks = new HashSet<BasicBlock>();
+            HashSet<Page> pages = new HashSet<Page>();
+
+            BasicBlock block = BasicBlock.GenerateBlock(p, baseAddress, ref blocks, ref pages, maxDepth);
+            return block;
+        }
 
         /// <summary>
         /// Generates a new basic block that starts at the supplied base address.
         /// </summary>
         /// <param name="p">The process interactor used to read data from the target.</param>
         /// <param name="baseAddress">The base address of the basic block.</param>
+        /// <param name="blocks">
+        /// A set of basic blocks that relate to the current block through either direct or indirect connections.
+        /// </param>
         /// <param name="pages">A set of pages that have been read while analyzing basic blocks.</param>
+        /// <param name="maxDepth">
+        /// The maximum number of code flow indirections to be followed. If set to -1, no maximum indirection count is
+        /// enforced.
+        /// </param>
+        /// <param name="currentDepth">The current number of indirections that have been followed.</param>
         /// <returns>Returns a basic block that starts at the supplied address.</returns>
         /// <remarks>
         /// Unhandled ends to basic blocks (descriptions taken from wikipedia):
@@ -62,14 +120,34 @@
         /// - Instructions following ones that throw exceptions
         /// - Exception handlers.
         /// </remarks>
-        public static BasicBlock GenerateBlock(PInteractor p, IntPtr baseAddress, ref List<Page> pages)
+        public static BasicBlock GenerateBlock(
+            PInteractor p,
+            IntPtr baseAddress,
+            ref HashSet<BasicBlock> blocks,
+            ref HashSet<Page> pages,
+            long maxDepth = -1,
+            long currentDepth = 0)
         {
-            // TODO: Add some type of mechanism to track all basic blocks as a unique list/set, so that duplicates
-            //       will not be added.
-
             // Prepare the base block.
-            BasicBlock block = new BasicBlock();
+            BasicBlock block = null;
 
+            // If a block at this address already exists, return that block.
+            foreach (BasicBlock b in blocks)
+            {
+                if (b.InstructionsDecomposed[0].addr == (ulong)baseAddress.ToInt64())
+                {
+                    return b;
+                }
+            }
+
+            // If the block did not exist, then create a new block.
+            if (block == null)
+            {
+                block = new BasicBlock();
+                blocks.Add(block);
+            }
+
+            // Get the address of the page where the block exists.
             Page currentPage = null;
             IntPtr pageBase = new IntPtr((baseAddress.ToInt64() / SysInteractor.PageSize) * SysInteractor.PageSize);
             foreach (Page page in pages)
@@ -81,6 +159,7 @@
                 }
             }
 
+            // Read the data from the page where the block exists.
             if (currentPage == null)
             {
                 currentPage = new Page();
@@ -89,65 +168,172 @@
 
                 if (!p.Read(currentPage.Address, currentPage.Data))
                 {
+                    Console.WriteLine("Unable to read address 0x" + currentPage.Address.ToInt32().ToString("x").PadLeft(8, '0'));
+                    Console.WriteLine("Error: " + Marshal.GetLastWin32Error());
                     return new BasicBlock();
                 }
 
-                currentPage.Instructions = Distorm.Decompose(currentPage.Data, (ulong)currentPage.Address.ToInt64());
-                if (currentPage.Instructions.Length == 0)
+                currentPage.InstructionsDecomposed =
+                    Distorm.Decompose(currentPage.Data, (ulong)currentPage.Address.ToInt64());
+                if (currentPage.InstructionsDecomposed.Length == 0)
                 {
                     return new BasicBlock();
                 }
-            }
 
-            BasicBlock currentBlock = block;
+                currentPage.InstructionsDisassembled =
+                    Distorm.Disassemble(currentPage.Data, (ulong)currentPage.Address.ToInt64());
+                if (currentPage.InstructionsDisassembled.Count == 0)
+                {
+                    return new BasicBlock();
+                }
+
+                pages.Add(currentPage);
+            }
 
             int i = 0;
-            for (; i < currentPage.Instructions.Length; ++i)
+            for (; i < currentPage.InstructionsDecomposed.Length; ++i)
             {
-                if (currentPage.Instructions[i].addr == (ulong)baseAddress.ToInt64())
+                if (currentPage.InstructionsDecomposed[i].addr == (ulong)baseAddress.ToInt64())
                 {
-                    // Add the instruction at the base address.
-                    currentBlock.Instructions.Add(currentPage.Instructions[i++]);
+                    // Break once the instruction has been found.
                     break;
+                }
+                else if (currentPage.InstructionsDecomposed[i].addr > (ulong)baseAddress.ToInt64())
+                {
+                    Console.WriteLine("Disassembly failed for address: 0x" + currentPage.InstructionsDecomposed[i].addr.ToString("x").PadLeft(8, '0'));
+                    return new BasicBlock();
                 }
             }
 
-            for (; i < currentPage.Instructions.Length; ++i)
+            if (i >= currentPage.InstructionsDecomposed.Length)
             {
-                // Verify that no control flow instructions are added in the middle of a basic block.
-                while (
-                    currentPage.Instructions[i].FlowControlFlags != Distorm.FlowControl.CND_BRANCH &&
-                    currentPage.Instructions[i].FlowControlFlags != Distorm.FlowControl.RET &&
-                    currentPage.Instructions[i].FlowControlFlags != Distorm.FlowControl.UNC_BRANCH)
+                Console.WriteLine("Need to use scanner to identify and decompose regions, rather than single pages.");
+                return new BasicBlock();
+            }
+
+            // Verify that no control flow instructions are added in the middle of a basic block.
+            while (
+                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.CALL &&
+                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.CND_BRANCH &&
+                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.RET &&
+                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.UNC_BRANCH)
+            {
+                // Add the non-control-modifying instructions.
+                block.InstructionsDecomposed.Add(currentPage.InstructionsDecomposed[i]);
+                block.InstructionsDisassembled.Add(currentPage.InstructionsDisassembled[i++]);
+                if (i >= currentPage.InstructionsDecomposed.Length)
                 {
-                    // Add the non-control-modifying instructions.
-                    currentBlock.Instructions.Add(currentPage.Instructions[i++]);
+                    Console.WriteLine("Need to use scanner to identify and decompose regions, rather than single pages.");
+                    return new BasicBlock();
+                }
+            }
+
+            // Add the control-modifying instruction.
+            block.InstructionsDecomposed.Add(currentPage.InstructionsDecomposed[i]);
+            block.InstructionsDisassembled.Add(currentPage.InstructionsDisassembled[i]);
+
+            // End parsing if this is the end of the block.
+            if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.RET)
+            {
+                return block;
+            }
+
+            // Parse the branch block.
+            BasicBlock branchBlock;
+            if (maxDepth == -1 || currentDepth <= maxDepth)
+            {
+                // This handles CALL, CND_BRANCH, and UNC_BRANCH.
+                if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL)
+                {
+                    branchBlock = blocks.FirstOrDefault(
+                        x => x.InstructionsDecomposed.Count > 0 &&
+                             x.InstructionsDecomposed[0].addr == currentPage.InstructionsDecomposed[i].BranchTarget);
+                    if (branchBlock == null)
+                    {
+                        // Do not expand calls. Add a stub block, instead.
+                        branchBlock = new BasicBlock();
+                        Distorm.DInst inst = new Distorm.DInst();
+                        inst.addr = currentPage.InstructionsDecomposed[i].BranchTarget;
+                        branchBlock.InstructionsDecomposed.Add(inst);
+                        branchBlock.InstructionsDisassembled.Add("...");
+                        blocks.Add(branchBlock);
+                    }
+                }
+                else
+                {
+                    branchBlock = GenerateBlock(
+                        p, new IntPtr((long)currentPage.InstructionsDecomposed[i].BranchTarget), ref blocks, ref pages, maxDepth, currentDepth + 1);
                 }
 
-                // Add the control-modifying instruction.
-                currentBlock.Instructions.Add(currentPage.Instructions[i]);
+                block.Next.Add(branchBlock);
+                branchBlock.Previous.Add(block);
+            }
 
-                if (currentPage.Instructions[i].FlowControlFlags == Distorm.FlowControl.RET)
-                {
-                    break;
-                }
-
-                // Recursive step.
-                BasicBlock forkedBlock =
-                    GenerateBlock(p, new IntPtr((long)currentPage.Instructions[i].addr), ref pages);
-                currentBlock.Next.Add(forkedBlock);
-                forkedBlock.Previous.Add(currentBlock);
-
-                // Add the fall-through block.
-                BasicBlock nextBlock = new BasicBlock();
-                currentBlock.Next.Add(nextBlock);
-                nextBlock.Previous.Add(currentBlock);
-
-                currentBlock = nextBlock;
+            if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CND_BRANCH ||
+                currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL)
+            {
+                BasicBlock nextBlock = GenerateBlock(
+                    p, new IntPtr((long)currentPage.InstructionsDecomposed[++i].addr), ref blocks, ref pages, maxDepth, currentDepth);
+                block.Next.Add(nextBlock);
+                nextBlock.Previous.Add(block);
             }
 
             // Return results.
             return block;
+        }
+
+        /// <summary>
+        /// Generates a graphviz graph from the supplied basic block set.
+        /// </summary>
+        /// <param name="blocks">The set of basic blocks that will be converted to a graph.</param>
+        /// <returns>Returns a string that holds the contents of a valid graphviz file.</returns>
+        public static string GenerateGraph(HashSet<BasicBlock> blocks)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("digraph g{graph[rankdir=TB];node[fontname=\"Courier New\" fontsize=10];");
+            foreach (BasicBlock block in blocks)
+            {
+                sb.Append(block.ToGraphVizEntry());
+            }
+
+            sb.Append("}");
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Converts this basic block into a node within a graphviz file.
+        /// </summary>
+        /// <returns>Returns a string representation of this basic block as a graphviz node.</returns>
+        public string ToGraphVizEntry()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            // Create node.
+            sb.Append("node" + this.ID + "[label=<");
+            sb.Append("<table border=\"0\" cellborder=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr><td>");
+            if (this.InstructionsDecomposed.Count > 0)
+            {
+                sb.Append("0x" + this.InstructionsDecomposed[0].addr.ToString("x").PadLeft(8, '0') + ":");
+                sb.Append("<br align=\"left\" />");
+            }
+
+            foreach (string inst in this.InstructionsDisassembled)
+            {
+                sb.Append(inst);
+                sb.Append("<br align=\"left\" />");
+            }
+
+            sb.Append("</td></tr></table>>shape=\"box\"];");
+
+            // Create edges.
+            foreach (BasicBlock b in this.Next)
+            {
+                sb.Append("node" + this.ID + "->node" + b.ID + ";");
+            }
+
+            return sb.ToString();
         }
 
         #endregion
