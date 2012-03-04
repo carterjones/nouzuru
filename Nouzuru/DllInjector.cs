@@ -23,7 +23,7 @@
             IntPtr loadLibAddy = IntPtr.Zero;
 
             // If the PID has not been set, then not enough information is available for the injection.
-            if (this.PID == 0)
+            if (!this.IsOpen)
             {
                 return false;
             }
