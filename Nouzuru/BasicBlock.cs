@@ -93,6 +93,8 @@
             HashSet<Page> pages = new HashSet<Page>();
 
             BasicBlock block = BasicBlock.GenerateBlock(p, baseAddress, ref blocks, ref pages, maxDepth);
+            BasicBlock.RemoveDuplicateInstructions(ref blocks);
+
             return block;
         }
 
@@ -334,6 +336,45 @@
             }
 
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Searches for basic blocks that contain instructions that occur in other blocks. If any blocks contain
+        /// duplicate portions of other blocks, the duplicate portions are removed. All previous and next connections
+        /// are adjusted accordingly.
+        /// </summary>
+        /// <param name="blocks">The set of basic blocks that may contain duplicates.</param>
+        private static void RemoveDuplicateInstructions(ref HashSet<BasicBlock> blocks)
+        {
+            IOrderedEnumerable<BasicBlock> orderedBlocks = blocks.OrderBy(x => x.ID);
+            foreach (BasicBlock blockA in orderedBlocks)
+            {
+                // Only look at blocks where there are more than 1 instruction.
+                if (blockA.InstructionsDecomposed.Count > 1)
+                {
+                    // Look at all instructions after the first instruction.
+                    foreach (Distorm.DInst inst in blockA.InstructionsDecomposed.Skip(1))
+                    {
+                        // Look at the first instruction of all other blocks.
+                        IEnumerable<BasicBlock> otherBlocks = orderedBlocks.Where(x => x.ID != blockA.ID);
+                        BasicBlock blockFound =
+                            otherBlocks.FirstOrDefault(x => x.InstructionsDecomposed[0].addr == inst.addr);
+                        if (blockFound != null)
+                        {
+                            // Delete the current instruction and all after, within the current block.
+                            blockA.InstructionsDecomposed.RemoveAll(
+                                x => x.addr >= blockFound.InstructionsDecomposed[0].addr);
+                            blockA.InstructionsDisassembled =
+                                blockA.InstructionsDisassembled.Take(blockA.InstructionsDecomposed.Count).ToList();
+
+                            // Set the fall-through block to the block that was found.
+                            blockA.Next.Clear();
+                            blockA.Next.Add(blockFound);
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         #endregion
