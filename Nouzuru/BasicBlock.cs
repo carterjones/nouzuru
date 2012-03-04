@@ -215,7 +215,8 @@
 
             // Verify that no control flow instructions are added in the middle of a basic block.
             while (
-                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.CALL &&
+                !(currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL &&
+                  currentPage.InstructionsDecomposed[i].ops[0].type == Distorm.OperandType.PC) &&
                 currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.CND_BRANCH &&
                 currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.RET &&
                 currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.UNC_BRANCH)
@@ -244,8 +245,9 @@
             BasicBlock branchBlock;
             if (maxDepth == -1 || currentDepth <= maxDepth)
             {
-                // This handles CALL, CND_BRANCH, and UNC_BRANCH.
-                if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL)
+                // This handles CND_BRANCH, UNC_BRANCH, and CALL (only CALLs with PC operand types).
+                if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL &&
+                    currentPage.InstructionsDecomposed[i].ops[0].type == Distorm.OperandType.PC)
                 {
                     branchBlock = blocks.FirstOrDefault(
                         x => x.InstructionsDecomposed.Count > 0 &&
