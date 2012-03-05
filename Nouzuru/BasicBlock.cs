@@ -287,6 +287,74 @@
         }
 
         /// <summary>
+        /// Combines multiple sets of blocks into a single set of blocks. Removes any duplicate blocks and adjusts
+        /// next and previous connections accordingly.
+        /// </summary>
+        /// <param name="blockSets">The collection of basic block sets.</param>
+        /// <returns>Returns the unified set of blocks.</returns>
+        public static HashSet<BasicBlock> MergeBlockSets(params HashSet<BasicBlock>[] blockSets)
+        {
+            HashSet<BasicBlock> blocksCombo = new HashSet<BasicBlock>();
+            foreach (HashSet<BasicBlock> blockSet in blockSets)
+            {
+                blocksCombo.UnionWith(blockSet);
+            }
+
+            HashSet<BasicBlock> blocksForRemoval = new HashSet<BasicBlock>();
+            foreach (BasicBlock block in blocksCombo)
+            {
+                IEnumerable<BasicBlock> connections =
+                    blocksCombo.Where(x => x.InstructionsDecomposed[0].addr == block.InstructionsDecomposed[0].addr);
+                int numConnections = connections.Count();
+                if (numConnections > 1)
+                {
+                    IEnumerable<BasicBlock> expanded =
+                        connections.Where(x => !x.InstructionsDisassembled[0].Equals("..."));
+                    int numExpanded = expanded.Count();
+                    BasicBlock chosenBlock;
+                    if (numExpanded == 0)
+                    {
+                        // Both are stubs, so just pick the first one.
+                        chosenBlock = connections.ElementAt(0);
+                    }
+                    else
+                    {
+                        // Assume there are no discrepencies and choose the first element.
+                        chosenBlock = expanded.ElementAt(0);
+                    }
+
+                    // Adjust the blocks adjacent to the non-chosen blocks to now use the chosen block.
+                    IEnumerable<BasicBlock> nonChosenBlocks = connections.Where(x => x.ID != chosenBlock.ID);
+                    int numNonChosenBlocks = nonChosenBlocks.Count();
+                    foreach (BasicBlock nonChosenBlock in nonChosenBlocks)
+                    {
+                        // Re-direct the previous blocks to the new block.
+                        foreach (BasicBlock prev in nonChosenBlock.Previous)
+                        {
+                            prev.Next.Remove(nonChosenBlock);
+
+                            // Add the link to the new block, if it has not been added in a prior iteration.
+                            if (!prev.Next.Exists(x => x.ID == chosenBlock.ID))
+                            {
+                                prev.Next.Add(chosenBlock);
+                            }
+                        }
+
+                        // Mark the block to be removed.
+                        blocksForRemoval.Add(nonChosenBlock);
+                    }
+                }
+            }
+
+            foreach (BasicBlock block in blocksForRemoval)
+            {
+                blocksCombo.Remove(block);
+            }
+
+            return blocksCombo;
+        }
+
+        /// <summary>
         /// Generates a graphviz graph from the supplied basic block set.
         /// </summary>
         /// <param name="blocks">The set of basic blocks that will be converted to a graph.</param>
