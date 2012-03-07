@@ -6,7 +6,7 @@
     using System.Text;
     using Distorm3cs;
 
-    class Profiler : Debugger
+    public class Profiler : Debugger
     {
         #region Properties
 
