@@ -46,7 +46,7 @@
         /// <summary>
         /// Gets a value indicating whether the target process is 64-bit or not.
         /// </summary>
-        public bool Is64Bit { get; private set; }
+        public bool Is64Bit { get; protected set; }
 
         /// <summary>
         /// Gets a value indicating whether a target process has been opened.
@@ -104,7 +104,7 @@
         /// <summary>
         /// Gets a logger used to report status updates, errors, etc.
         /// </summary>
-        protected Logger Status { get; private set; }
+        protected Logger Status { get; set; }
 
         #endregion
 
