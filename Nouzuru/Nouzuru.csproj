@@ -71,6 +71,7 @@
     <Compile Include="DllInjector.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="PInteractor.cs" />
+    <Compile Include="Profiler.cs" />
     <Compile Include="Region.cs" />
     <Compile Include="Scanner.cs" />
     <Compile Include="SysInteractor.cs" />
