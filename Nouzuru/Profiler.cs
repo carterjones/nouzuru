@@ -10,11 +10,11 @@
     {
         #region Properties
 
+        public bool InitialBreakpointHit { get; protected set; }
+
         protected bool RestoreBreakpointOnExceptionSingleStep { get; set; }
 
         protected IntPtr BreakpointAddressJustHit { get; set; }
-
-        protected bool InitialBreakpointHit { get; set; }
 
         #endregion
 
