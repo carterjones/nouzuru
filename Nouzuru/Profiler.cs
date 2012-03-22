@@ -21,6 +21,25 @@
         #region Methods
 
         /// <summary>
+        /// Sets a soft breakpoint in the target at the first instruction of the each basic block.
+        /// </summary>
+        /// <param name="blocks">The basic blocks of interest.</param>
+        /// <returns>Returns true if the breakpoints were successfully set.</returns>
+        public bool SetBreakpoints(IEnumerable<BasicBlock> blocks)
+        {
+            foreach (BasicBlock block in blocks)
+            {
+                if (!this.SetSoftBP(new IntPtr((long)block.InstructionsDecomposed[0].addr)))
+                {
+                    Console.WriteLine("Error setting breakpoint at 0x" + block.InstructionsDecomposed[0].addr.ToString("x"));
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Disassembles the area around the specified address to find the length of the instruction that precedes the
         /// instruction at the specified address.
         /// </summary>
