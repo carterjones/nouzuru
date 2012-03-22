@@ -402,6 +402,35 @@
         }
 
         /// <summary>
+        /// Writes the supplied strsucture to the specified address in memory.
+        /// </summary>
+        /// <typeparam name="T">The type of object to be populated.</typeparam>
+        /// <param name="address">The address containing the data used to populate the object to be returned.</param>
+        /// <param name="newValue">The structure to be written to memory.</param>
+        /// <param name="options">Various options that determine what happens with the old and new address.</param>
+        /// <returns>Returns a structure that has been populated with data from the specified address.</returns>
+        public bool WriteStructure<T>(
+            IntPtr address, T newValue, Patcher.WriteOptions options = WriteOptions.SaveOldValue)
+        {
+            byte[] bytes = Auxiliary.GetBytes<T>(newValue);
+
+            IntPtr allocMem = WinApi.VirtualAllocEx(
+                this.ProcHandle,
+                address,
+                (uint)bytes.Length,
+                WinApi.MemoryState.MEM_COMMIT | WinApi.MemoryState.MEM_RESERVE,
+                WinApi.MemoryProtect.PAGE_READWRITE);
+
+            if (allocMem == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            uint nbw = 0;
+            return WinApi.WriteProcessMemory(this.ProcHandle, address, bytes, (uint)Marshal.SizeOf(typeof(T)), out nbw);
+        }
+
+        /// <summary>
         /// The function that writes the 'frozen' addresses with the desired values.
         /// </summary>
         protected virtual void FreezeThread()
