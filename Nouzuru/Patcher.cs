@@ -368,7 +368,7 @@
             }
 
             byte[] oldValue = null;
-            if (options.HasFlag(WriteOptions.SaveOldValue))
+            if (((uint)options & (uint)WriteOptions.SaveOldValue) > 0)
             {
                 oldValue = new byte[newValue.Length];
                 if (!this.Read(address, oldValue))
@@ -390,10 +390,10 @@
             }
 
             Address newAddress =
-                new Address(address, options.HasFlag(WriteOptions.FreezeNewValue), oldValue, newValue);
+                new Address(address, (((uint)options & (uint)WriteOptions.FreezeNewValue) > 0), oldValue, newValue);
 
-            if (options.HasFlag(WriteOptions.SaveOldValue) ||
-                options.HasFlag(WriteOptions.FreezeNewValue))
+            if ((((uint)options & (uint)WriteOptions.SaveOldValue) > 0) ||
+                (((uint)options & (uint)WriteOptions.FreezeNewValue) > 0))
             {
                 this.SaveAddress(newAddress);
             }
