@@ -28,6 +28,16 @@
         private Thread debugThread;
 
         /// <summary>
+        /// True if the debug thread initialization has completed.
+        /// </summary>
+        private bool debugThreadInitComplete = false;
+
+        /// <summary>
+        /// True if the debug thread initialization was successful.
+        /// </summary>
+        private bool debugThreadInitSuccess = false;
+
+        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
@@ -144,7 +154,12 @@
 
             this.debugThread = new Thread(this.StartDebugLoop);
             this.debugThread.Start(filePath);
-            return this.debugThread.IsAlive;
+            while (!this.debugThreadInitComplete)
+            {
+                Thread.Sleep(1);
+            }
+
+            return this.debugThreadInitSuccess;
         }
 
         protected bool BeginEditThread(uint threadId, out IntPtr hThread, out WinApi.CONTEXT cx)
@@ -414,9 +429,14 @@
                 this.debugThread.Join();
             }
 
-            this.debugThread = new Thread(this.DebugLoop);
+            this.debugThread = new Thread(this.StartDebugLoop);
             this.debugThread.Start();
-            return this.debugThread.IsAlive;
+            while (!this.debugThreadInitComplete)
+            {
+                Thread.Sleep(1);
+            }
+
+            return this.debugThreadInitSuccess;
         }
 
         /// <summary>
@@ -1137,6 +1157,8 @@
                         break;
 
                     case (uint)WinApi.DebugEventType.CREATE_PROCESS_DEBUG_EVENT:
+                        this.debugThreadInitSuccess = true;
+                        this.debugThreadInitComplete = true;
                         continueStatus = this.OnCreateProcessDebugEvent(ref de);
                         break;
 
@@ -1170,6 +1192,8 @@
 
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
             }
+
+            this.debugThreadInitComplete = true;
 
             if (!WinApi.DebugActiveProcessStop((uint)this.PID))
             {
