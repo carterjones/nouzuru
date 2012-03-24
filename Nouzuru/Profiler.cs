@@ -35,7 +35,7 @@
 
             // Read the memory around the address. Read from an address that is at least two instructions away from
             // where the target address's instruction occurs.
-            IntPtr beginBufAddress = IntPtr.Subtract(address, 28);
+            IntPtr beginBufAddress = new IntPtr(address.ToInt64() - 28);
             int bufSize = 50;
             byte[] buffer = Enumerable.Repeat((byte)0, bufSize).ToArray();
             if (!this.Read(beginBufAddress, buffer))
