@@ -39,47 +39,6 @@
             return true;
         }
 
-        /// <summary>
-        /// Disassembles the area around the specified address to find the length of the instruction that precedes the
-        /// instruction at the specified address.
-        /// </summary>
-        /// <param name="address">The address that occurs after the instruction of interest.</param>
-        /// <returns>Returns the size of the instruction that occurs before the specified address.</returns>
-        private uint GetPreviousInstructionSize(IntPtr address)
-        {
-            if (!this.IsOpen)
-            {
-                return 0;
-            }
-
-            // Read the memory around the address. Read from an address that is at least two instructions away from
-            // where the target address's instruction occurs.
-            IntPtr beginBufAddress = new IntPtr(address.ToInt64() - 28);
-            int bufSize = 50;
-            byte[] buffer = Enumerable.Repeat((byte)0, bufSize).ToArray();
-            if (!this.Read(beginBufAddress, buffer))
-            {
-#if DEBUG
-                this.Status.Log("Could not read memory at " + this.IntPtrToFormattedAddress(beginBufAddress));
-#endif
-                return 0;
-            }
-
-            // Disassemble the memory around the address.
-            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
-
-            for (uint i = 0; i < insts.Length; ++i)
-            {
-                if (insts[i].addr >= (ulong)address.ToInt64())
-                {
-                    return insts[i - 1].size;
-                }
-            }
-
-            // Return nothing if a compatible instruction is not found.
-            return 0;
-        }
-
         protected override WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (!this.InitialBreakpointHit)
@@ -147,7 +106,6 @@
                     "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
                     "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
 #endif
-
             }
 #if WIN64
             uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx.Rip));
@@ -213,6 +171,47 @@
             }
 #endif
             return base.OnSingleStepDebugException(ref de);
+        }
+
+        /// <summary>
+        /// Disassembles the area around the specified address to find the length of the instruction that precedes the
+        /// instruction at the specified address.
+        /// </summary>
+        /// <param name="address">The address that occurs after the instruction of interest.</param>
+        /// <returns>Returns the size of the instruction that occurs before the specified address.</returns>
+        private uint GetPreviousInstructionSize(IntPtr address)
+        {
+            if (!this.IsOpen)
+            {
+                return 0;
+            }
+
+            // Read the memory around the address. Read from an address that is at least two instructions away from
+            // where the target address's instruction occurs.
+            IntPtr beginBufAddress = new IntPtr(address.ToInt64() - 28);
+            int bufSize = 50;
+            byte[] buffer = Enumerable.Repeat((byte)0, bufSize).ToArray();
+            if (!this.Read(beginBufAddress, buffer))
+            {
+#if DEBUG
+                this.Status.Log("Could not read memory at " + this.IntPtrToFormattedAddress(beginBufAddress));
+#endif
+                return 0;
+            }
+
+            // Disassemble the memory around the address.
+            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
+
+            for (uint i = 0; i < insts.Length; ++i)
+            {
+                if (insts[i].addr >= (ulong)address.ToInt64())
+                {
+                    return insts[i - 1].size;
+                }
+            }
+
+            // Return nothing if a compatible instruction is not found.
+            return 0;
         }
 
         #endregion

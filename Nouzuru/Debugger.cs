@@ -162,87 +162,6 @@
             return this.debugThreadInitSuccess;
         }
 
-        protected bool BeginEditThread(uint threadId, out IntPtr hThread, out WinApi.CONTEXT cx)
-        {
-            WinApi.ThreadAccess threadRights =
-                WinApi.ThreadAccess.SET_CONTEXT |
-                WinApi.ThreadAccess.GET_CONTEXT |
-                WinApi.ThreadAccess.SUSPEND_RESUME;
-            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, threadId);
-            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
-            {
-                this.Status.Log(
-                    "Could not open thread to add hardware breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
-                hThread = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
-            }
-
-            uint res = WinApi.SuspendThread(threadHandle);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to suspend thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    cx = new WinApi.CONTEXT();
-                    hThread = IntPtr.Zero;
-                    return false;
-                }
-            }
-
-            WinApi.CONTEXT context = new WinApi.CONTEXT();
-
-            // TODO: get the most context data from the thread, if FULL cannot get the most.
-            context.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.GetThreadContext(threadHandle, ref context))
-            {
-                this.Status.Log(
-                    "Unable to get thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(threadHandle);
-                hThread = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
-            }
-
-            hThread = threadHandle;
-            cx = context;
-            return true;
-        }
-
-        protected bool EndEditThread(ref IntPtr hThread, ref WinApi.CONTEXT cx)
-        {
-            // TODO: get the most context data from the thread, if FULL cannot get the most.
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.SetThreadContext(hThread, ref cx))
-            {
-                this.Status.Log(
-                    "Unable to set thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(hThread);
-                return false;
-            }
-
-            uint res = WinApi.ResumeThread(hThread);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to resume thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(hThread);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         /// <summary>
         /// Sets the instruction pointer of the main thread to the specified value.
         /// </summary>
@@ -604,6 +523,87 @@
             res &= this.UnsetAllSoftBPs();
             res &= this.UnsetAllHardBPs();
             return res;
+        }
+
+        protected bool BeginEditThread(uint threadId, out IntPtr hThread, out WinApi.CONTEXT cx)
+        {
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, threadId);
+            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            {
+                this.Status.Log(
+                    "Could not open thread to add hardware breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
+                hThread = IntPtr.Zero;
+                cx = new WinApi.CONTEXT();
+                return false;
+            }
+
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to suspend thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    cx = new WinApi.CONTEXT();
+                    hThread = IntPtr.Zero;
+                    return false;
+                }
+            }
+
+            WinApi.CONTEXT context = new WinApi.CONTEXT();
+
+            // TODO: get the most context data from the thread, if FULL cannot get the most.
+            context.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.GetThreadContext(threadHandle, ref context))
+            {
+                this.Status.Log(
+                    "Unable to get thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                hThread = IntPtr.Zero;
+                cx = new WinApi.CONTEXT();
+                return false;
+            }
+
+            hThread = threadHandle;
+            cx = context;
+            return true;
+        }
+
+        protected bool EndEditThread(ref IntPtr hThread, ref WinApi.CONTEXT cx)
+        {
+            // TODO: get the most context data from the thread, if FULL cannot get the most.
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.SetThreadContext(hThread, ref cx))
+            {
+                this.Status.Log(
+                    "Unable to set thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(hThread);
+                return false;
+            }
+
+            uint res = WinApi.ResumeThread(hThread);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to resume thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(hThread);
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #region Debug Events
