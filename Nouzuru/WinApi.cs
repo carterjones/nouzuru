@@ -347,7 +347,7 @@
             public ushort DataSelector;
             public ushort Reserved3;
             public uint MxCsr;
-            public uint MxCsr_Mask;
+            public uint MxCsrMask;
 
             [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 8)]
             public M128A[] FloatRegisters;
