@@ -68,8 +68,10 @@
   <ItemGroup>
     <Compile Include="Address.cs" />
     <Compile Include="Auxiliary.cs" />
+    <Compile Include="BasicBlock.cs" />
     <Compile Include="Debugger.cs" />
     <Compile Include="DllInjector.cs" />
+    <Compile Include="Page.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="PInteractor.cs" />
     <Compile Include="Profiler.cs" />
