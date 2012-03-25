@@ -183,7 +183,7 @@
 
 #if WIN64
             // TODO: fix Rip for x64
-            //cx.Rip = (ulong)address.ToInt64();
+            ////cx.Rip = (ulong)address.ToInt64();
 #else
             cx.Eip = (uint)address.ToInt32();
 #endif
@@ -217,7 +217,7 @@
 
 #if WIN64
             // TODO: fix Rip for x64
-            //cx.Rip = (ulong)address.ToInt64();
+            ////cx.Rip = (ulong)address.ToInt64();
 #else
             cx.EFlags = 0x100;
 #endif
@@ -525,6 +525,13 @@
             return res;
         }
 
+        /// <summary>
+        /// Suspend the thread and prepare the thread context to be modified.
+        /// </summary>
+        /// <param name="threadId">The ID of the thread to be modified.</param>
+        /// <param name="threadHandle">A handle of the thread to be modified.</param>
+        /// <param name="cx">The context of the thread to be modified.</param>
+        /// <returns>Returns true if the thread was successfully paused and prepared for modification.</returns>
         protected bool BeginEditThread(uint threadId, out IntPtr threadHandle, out WinApi.CONTEXT cx)
         {
             WinApi.ThreadAccess threadRights =
@@ -576,6 +583,12 @@
             return true;
         }
 
+        /// <summary>
+        /// Apply the thread context modification and resume the thread.
+        /// </summary>
+        /// <param name="threadHandle">A handle of the thread to be modified.</param>
+        /// <param name="cx">The context of the thread to be modified.</param>
+        /// <returns>Returns true if the thread was successfully modified and resumed.</returns>
         protected bool EndEditThread(ref IntPtr threadHandle, ref WinApi.CONTEXT cx)
         {
             // TODO: get the most context data from the thread, if FULL cannot get the most.
@@ -974,7 +987,7 @@
                 processSecurity.nLength = Marshal.SizeOf(processSecurity);
                 threadSecurity.nLength = Marshal.SizeOf(threadSecurity);
 
-                //Open Notepad
+                // Open the process.
                 res = WinApi.CreateProcess(
                     application,
                     commandLine,

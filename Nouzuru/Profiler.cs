@@ -6,14 +6,26 @@
     using System.Text;
     using Distorm3cs;
 
+    /// <summary>
+    /// A type of debugger that is used for monitoring the execution flow of a process.
+    /// </summary>
     public class Profiler : Debugger
     {
         #region Properties
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the initial breakpoint has been hit.
+        /// </summary>
         public bool InitialBreakpointHit { get; protected set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether a value should be restored when a single step exception is hit.
+        /// </summary>
         protected bool RestoreBreakpointOnExceptionSingleStep { get; set; }
 
+        /// <summary>
+        /// Gets or sets the address of a breakpoint that was just hit.
+        /// </summary>
         protected IntPtr BreakpointAddressJustHit { get; set; }
 
         #endregion
@@ -39,6 +51,12 @@
             return true;
         }
 
+        /// <summary>
+        /// Handles the EXCEPTION_BREAKPOINT debug exception.
+        /// Causes the process to trigger a single step debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (!this.InitialBreakpointHit)
@@ -57,6 +75,12 @@
             return base.OnBreakpointDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the EXCEPTION_SINGLE_STEP debug exception.
+        /// Logs information about the thread state when the exception is hit.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
             WinApi.ThreadAccess thread_rights =

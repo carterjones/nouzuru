@@ -390,8 +390,8 @@
         public struct _CONTEXT_FLOATING_POINT_STATE_UNION
         {
             // When this is uncommented, it causes runtime errors.
-            //[FieldOffset(0)]
-            //public XMM_SAVE_AREA32 FltSave;
+            ////[FieldOffset(0)]
+            ////public XMM_SAVE_AREA32 FltSave;
 
             [FieldOffset(0)]
             public _CONTEXT_FLOATING_POINT_STATE_UNION_STRUCT s;
