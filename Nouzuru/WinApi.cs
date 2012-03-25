@@ -289,6 +289,148 @@
             public MemoryType Type;
         }
 
+#if WIN64
+        [StructLayout(LayoutKind.Sequential)]
+        public struct M128A
+        {
+            public ulong Low;
+            public long High;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct XMM_SAVE_AREA32
+        {
+            public ushort ControlWord;
+            public ushort StatusWord;
+            public char TagWord;
+            public char Reserved1;
+            public ushort ErrorOpcode;
+            public uint ErrorOffset;
+            public ushort ErrorSelector;
+            public ushort Reserved2;
+            public uint DataOffset;
+            public ushort DataSelector;
+            public ushort Reserved3;
+            public uint MxCsr;
+            public uint MxCsr_Mask;
+
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 8)]
+            public M128A[] FloatRegisters;
+
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 16)]
+            public M128A[] XmmRegisters;
+
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 96)]
+            public char[] Reserved4;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct _CONTEXT_FLOATING_POINT_STATE_UNION_STRUCT
+        {
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 2)]
+            public M128A[] Header;
+
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 8)]
+            public M128A[] Legacy;
+            
+            public M128A Xmm0;
+            public M128A Xmm1;
+            public M128A Xmm2;
+            public M128A Xmm3;
+            public M128A Xmm4;
+            public M128A Xmm5;
+            public M128A Xmm6;
+            public M128A Xmm7;
+            public M128A Xmm8;
+            public M128A Xmm9;
+            public M128A Xmm10;
+            public M128A Xmm11;
+            public M128A Xmm12;
+            public M128A Xmm13;
+            public M128A Xmm14;
+            public M128A Xmm15;
+        }
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct _CONTEXT_FLOATING_POINT_STATE_UNION
+        {
+            // When this is uncommented, it causes runtime errors.
+            //[FieldOffset(0)]
+            //public XMM_SAVE_AREA32 FltSave;
+
+            [FieldOffset(0)]
+            public _CONTEXT_FLOATING_POINT_STATE_UNION_STRUCT s;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct CONTEXT
+        {
+            // Register parameter home addresses.
+            public ulong P1Home;
+            public ulong P2Home;
+            public ulong P3Home;
+            public ulong P4Home;
+            public ulong P5Home;
+            public ulong P6Home;
+
+            // Control flags.
+            public CONTEXT_FLAGS ContextFlags;
+            public uint MxCsr;
+
+            // Segment Registers and processor flags.
+            public ushort SegCs;
+            public ushort SegDs;
+            public ushort SegEs;
+            public ushort SegFs;
+            public ushort SegGs;
+            public ushort SegSs;
+            public uint EFlags;
+
+            // Debug registers
+            public ulong Dr0;
+            public ulong Dr1;
+            public ulong Dr2;
+            public ulong Dr3;
+            public ulong Dr6;
+            public ulong Dr7;
+
+            // Integer registers.
+            public ulong Rax;
+            public ulong Rcx;
+            public ulong Rdx;
+            public ulong Rbx;
+            public ulong Rsp;
+            public ulong Rbp;
+            public ulong Rsi;
+            public ulong Rdi;
+            public ulong R8;
+            public ulong R9;
+            public ulong R10;
+            public ulong R11;
+            public ulong R12;
+            public ulong R13;
+            public ulong R14;
+            public ulong R15;
+
+            // Program counter.
+            public ulong Rip;
+
+            // Floating point state.
+            public _CONTEXT_FLOATING_POINT_STATE_UNION u;
+
+            // Vector registers.
+            [MarshalAsAttribute(UnmanagedType.ByValArray, SizeConst = 26)]
+            public M128A[] VectorRegister;
+            public ulong VectorControl;
+
+            // Special debug control registers.
+            public ulong DebugControl;
+            public ulong LastBranchToRip;
+            public ulong LastBranchFromRip;
+            public ulong LastExceptionToRip;
+            public ulong LastExceptionFromRip;
+        }
+#else
         [StructLayout(LayoutKind.Sequential)]
         public struct CONTEXT
         {
@@ -319,6 +461,7 @@
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
             public byte[] ExtendedRegisters;
         }
+#endif
 
         [StructLayout(LayoutKind.Sequential)]
         public struct CREATE_PROCESS_DEBUG_INFO

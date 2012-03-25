@@ -61,7 +61,11 @@
         [Flags]
         [SuppressMessage("Microsoft.StyleCop.CSharp.DocumentationRules", "SA1602:EnumerationItemsMustBeDocumented",
             Justification = "These values are documented at the above referenced URL.")]
+#if WIN64
+        private enum DRegSettings : ulong
+#else
         private enum DRegSettings : uint
+#endif
         {
             reg0set = 0x3,          // (00000000000000000000000000000011)
             reg1set = 0xC,          // (00000000000000000000000000001100)
@@ -899,11 +903,11 @@
             this.Status.Log("hThread: " + this.IntPtrToFormattedAddress(threadHandle));
 #endif
             WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS | WinApi.CONTEXT_FLAGS.ALL | WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.CONTROL | WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS;
             WinApi.GetThreadContext(threadHandle, ref cx);
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
             cx.Dr7 =
-                (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
+                (ulong)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
             bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
             WinApi.CloseHandle(threadHandle);
             threadHandle = IntPtr.Zero;
@@ -998,40 +1002,9 @@
 
                             default:
 #if WIN64
-                                // TODO: figure out why this occurs here in 64 bit mode, rather than up higher
-                                logger.Log("stepped.");
-                                hThread = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
-                                WinApi.SuspendThread(hThread);
-                                cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                                    WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-                                WinApi.GetThreadContext(hThread, ref cx);
-                                WinApi.ResumeThread(hThread);
-                                if (PrintRegistersOnBreakpoint)
-                                {
-                                    logger.Log(
-                                        "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
-                                        "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
-                                        "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
-                                        "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
-                                        "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
-                                        "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
-                                    logger.Log(
-                                        "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
-                                        "dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
-                                        "dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
-                                        "dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
-                                        "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
-                                        "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
-                                }
-
-                                prevInstSize = GetPreviousInstructionSize(new IntPtr(cx.Rip));
-                                if (PrintAccesses)
-                                {
-                                    logger.Log(
-                                        "Modifying address is " +
-                                        this.IntPtrToFormattedAddress(new IntPtr((cx.Rip - prevInstSize))) +
-                                        " with instruction length " + prevInstSize);
-                                }
+                                this.Status.Log(
+                                    "An unhandled (default) debug exception occurred in 64-bit mode. " + 
+                                    "Exception code: " + de.u.Exception.ExceptionRecord.ExceptionCode);
 #endif
                                 break;
                         }

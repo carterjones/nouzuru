@@ -87,8 +87,8 @@
             IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
             WinApi.SuspendThread(threadHandle);
 #if WIN64
-                                cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                                    WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
+                WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
 #else
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
                 WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS | WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
@@ -98,13 +98,20 @@
             if (this.LogRegistersOnBreakpoint)
             {
 #if WIN64
-                                    this.Status.Log(
-                                        "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
-                                        "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
-                                        "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
-                                        "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
-                                        "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
-                                        "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
+                this.Status.Log(
+                    "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
+                    "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
+                    "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
+                    "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
+                    "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
+                    "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
+                this.Status.Log(
+                    "dr0:" + cx.Dr0.ToString("X").PadLeft(16, '0') +
+                    "dr1:" + cx.Dr1.ToString("X").PadLeft(16, '0') +
+                    "dr2:" + cx.Dr2.ToString("X").PadLeft(16, '0') +
+                    "dr3:" + cx.Dr3.ToString("X").PadLeft(16, '0') +
+                    "dr6:" + cx.Dr6.ToString("X").PadLeft(16, '0') +
+                    "dr7:" + cx.Dr7.ToString("X").PadLeft(16, '0'));
 #else
                 this.Status.Log(
                     "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
@@ -113,7 +120,6 @@
                     "edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
                     "eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
                     "ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
-#endif
                 this.Status.Log(
                     "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
                     "dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
@@ -121,16 +127,40 @@
                     "dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
                     "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
                     "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
+#endif
+
             }
 #if WIN64
-                                prevInstSize = GetPreviousInstructionSize(new IntPtr(cx.Rip));
-                                if (PrintAccesses)
-                                {
-                                    logger.Log(
-                                        "Modifying address is " +
-                                        this.IntPtrToFormattedAddress(new IntPtr((cx.Rip - prevInstSize))) +
-                                        " with instruction length " + prevInstSize);
-                                }
+            uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx.Rip));
+            IntPtr prevInstruction = new IntPtr((long)cx.Rip - prevInstSize);
+            if (this.LogBreakpointAccesses)
+            {
+                this.Status.Log(
+                    "Modifying address is " +
+                    this.IntPtrToFormattedAddress(prevInstruction) +
+                    " with instruction length " + prevInstSize);
+            }
+
+            if (this.RestoreBreakpointOnExceptionSingleStep == true)
+            {
+                // TODO: eventually replace breakpointAddressJustHit with a check of Dr6.
+                if (this.BreakpointAddressJustHit != IntPtr.Zero)
+                {
+                    this.Write(this.BreakpointAddressJustHit, (byte)0xcc, WriteOptions.None);
+                    this.Status.Log(
+                        "Restoring breakpoint at " +
+                        this.IntPtrToFormattedAddress(this.BreakpointAddressJustHit));
+                    this.BreakpointAddressJustHit = IntPtr.Zero;
+                }
+                else
+                {
+                    this.Status.Log(
+                        "Unexpected series of events during breakpoint restoration.",
+                        Logger.Logger.Level.HIGH);
+                }
+
+                this.RestoreBreakpointOnExceptionSingleStep = false;
+            }
 #else
             uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr(cx.Eip));
             IntPtr prevInstruction = new IntPtr(cx.Eip - prevInstSize);
