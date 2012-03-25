@@ -1074,83 +1074,83 @@
                         switch (de.u.Exception.ExceptionRecord.ExceptionCode)
                         {
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
-                                continueStatus = OnSingleStepDebugException(ref de);
+                                continueStatus = this.OnSingleStepDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ACCESS_VIOLATION:
-                                continueStatus = OnAccessViolationDebugException(ref de);
+                                continueStatus = this.OnAccessViolationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ARRAY_BOUNDS_EXCEEDED:
-                                continueStatus = OnArrayBoundsExceededDebugException(ref de);
+                                continueStatus = this.OnArrayBoundsExceededDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
-                                continueStatus = OnBreakpointDebugException(ref de);
+                                continueStatus = this.OnBreakpointDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.DATATYPE_MISALIGNMENT:
-                                continueStatus = OnDatatypeMisalignmentDebugException(ref de);
+                                continueStatus = this.OnDatatypeMisalignmentDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DENORMAL_OPERAND:
-                                continueStatus = OnFltDenormalOperandDebugException(ref de);
+                                continueStatus = this.OnFltDenormalOperandDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DIVIDE_BY_ZERO:
-                                continueStatus = OnFltDivideByZeroDebugException(ref de);
+                                continueStatus = this.OnFltDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INEXACT_RESULT:
-                                continueStatus = OnFltInexactResultDebugException(ref de);
+                                continueStatus = this.OnFltInexactResultDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INVALID_OPERATION:
-                                continueStatus = OnFltInvalidOperationDebugException(ref de);
+                                continueStatus = this.OnFltInvalidOperationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_OVERFLOW:
-                                continueStatus = OnFltOverflowDebugException(ref de);
+                                continueStatus = this.OnFltOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_STACK_CHECK:
-                                continueStatus = OnFltStackCheckDebugException(ref de);
+                                continueStatus = this.OnFltStackCheckDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_UNDERFLOW:
-                                continueStatus = OnFltUnderflowDebugException(ref de);
+                                continueStatus = this.OnFltUnderflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ILLEGAL_INSTRUCTION:
-                                continueStatus = OnIllegalInstructionDebugException(ref de);
+                                continueStatus = this.OnIllegalInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.IN_PAGE_ERROR:
-                                continueStatus = OnInPageErrorDebugException(ref de);
+                                continueStatus = this.OnInPageErrorDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_DIVIDE_BY_ZERO:
-                                continueStatus = OnIntDivideByZeroDebugException(ref de);
+                                continueStatus = this.OnIntDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_OVERFLOW:
-                                continueStatus = OnIntOverflowDebugException(ref de);
+                                continueStatus = this.OnIntOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INVALID_DISPOSITION:
-                                continueStatus = OnInvalidDispositionDebugException(ref de);
+                                continueStatus = this.OnInvalidDispositionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.NONCONTINUABLE_EXCEPTION:
-                                continueStatus = OnNoncontinuableExceptionDebugException(ref de);
+                                continueStatus = this.OnNoncontinuableExceptionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.PRIV_INSTRUCTION:
-                                continueStatus = OnPrivInstructionDebugException(ref de);
+                                continueStatus = this.OnPrivInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
-                                continueStatus = OnStackOverflowDebugException(ref de);
+                                continueStatus = this.OnStackOverflowDebugException(ref de);
                                 break;
 
                             default:
