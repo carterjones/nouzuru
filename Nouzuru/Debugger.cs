@@ -162,87 +162,6 @@
             return this.debugThreadInitSuccess;
         }
 
-        protected bool BeginEditThread(uint threadId, out IntPtr hThread, out WinApi.CONTEXT cx)
-        {
-            WinApi.ThreadAccess threadRights =
-                WinApi.ThreadAccess.SET_CONTEXT |
-                WinApi.ThreadAccess.GET_CONTEXT |
-                WinApi.ThreadAccess.SUSPEND_RESUME;
-            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, threadId);
-            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
-            {
-                this.Status.Log(
-                    "Could not open thread to add hardware breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
-                hThread = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
-            }
-
-            uint res = WinApi.SuspendThread(threadHandle);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to suspend thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    cx = new WinApi.CONTEXT();
-                    hThread = IntPtr.Zero;
-                    return false;
-                }
-            }
-
-            WinApi.CONTEXT context = new WinApi.CONTEXT();
-
-            // TODO: get the most context data from the thread, if FULL cannot get the most.
-            context.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.GetThreadContext(threadHandle, ref context))
-            {
-                this.Status.Log(
-                    "Unable to get thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(threadHandle);
-                hThread = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
-            }
-
-            hThread = threadHandle;
-            cx = context;
-            return true;
-        }
-
-        protected bool EndEditThread(ref IntPtr hThread, ref WinApi.CONTEXT cx)
-        {
-            // TODO: get the most context data from the thread, if FULL cannot get the most.
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.SetThreadContext(hThread, ref cx))
-            {
-                this.Status.Log(
-                    "Unable to set thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(hThread);
-                return false;
-            }
-
-            uint res = WinApi.ResumeThread(hThread);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to resume thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(hThread);
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         /// <summary>
         /// Sets the instruction pointer of the main thread to the specified value.
         /// </summary>
@@ -255,26 +174,26 @@
                 return false;
             }
 
-            IntPtr hThread;
+            IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out hThread, out cx))
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
             {
                 return false;
             }
 
 #if WIN64
             // TODO: fix Rip for x64
-            //cx.Rip = (ulong)address.ToInt64();
+            ////cx.Rip = (ulong)address.ToInt64();
 #else
             cx.Eip = (uint)address.ToInt32();
 #endif
 
-            if (!this.EndEditThread(ref hThread, ref cx))
+            if (!this.EndEditThread(ref threadHandle, ref cx))
             {
                 return false;
             }
 
-            return WinApi.CloseHandle(hThread);
+            return WinApi.CloseHandle(threadHandle);
         }
 
         /// <summary>
@@ -289,25 +208,25 @@
                 return false;
             }
 
-            IntPtr hThread;
+            IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out hThread, out cx))
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
             {
                 return false;
             }
 
 #if WIN64
             // TODO: fix Rip for x64
-            //cx.Rip = (ulong)address.ToInt64();
+            ////cx.Rip = (ulong)address.ToInt64();
 #else
             cx.EFlags = 0x100;
 #endif
-            if (!this.EndEditThread(ref hThread, ref cx))
+            if (!this.EndEditThread(ref threadHandle, ref cx))
             {
                 return false;
             }
 
-            return WinApi.CloseHandle(hThread);
+            return WinApi.CloseHandle(threadHandle);
         }
 
         /// <summary>
@@ -604,6 +523,99 @@
             res &= this.UnsetAllSoftBPs();
             res &= this.UnsetAllHardBPs();
             return res;
+        }
+
+        /// <summary>
+        /// Suspend the thread and prepare the thread context to be modified.
+        /// </summary>
+        /// <param name="threadId">The ID of the thread to be modified.</param>
+        /// <param name="threadHandle">A handle of the thread to be modified.</param>
+        /// <param name="cx">The context of the thread to be modified.</param>
+        /// <returns>Returns true if the thread was successfully paused and prepared for modification.</returns>
+        protected bool BeginEditThread(uint threadId, out IntPtr threadHandle, out WinApi.CONTEXT cx)
+        {
+            WinApi.ThreadAccess threadRights =
+                WinApi.ThreadAccess.SET_CONTEXT |
+                WinApi.ThreadAccess.GET_CONTEXT |
+                WinApi.ThreadAccess.SUSPEND_RESUME;
+            threadHandle = WinApi.OpenThread(threadRights, false, threadId);
+            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            {
+                this.Status.Log(
+                    "Could not open thread to add hardware breakpoint. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
+                threadHandle = IntPtr.Zero;
+                cx = new WinApi.CONTEXT();
+                return false;
+            }
+
+            uint res = WinApi.SuspendThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to suspend thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    cx = new WinApi.CONTEXT();
+                    threadHandle = IntPtr.Zero;
+                    return false;
+                }
+            }
+
+            WinApi.CONTEXT context = new WinApi.CONTEXT();
+
+            // TODO: get the most context data from the thread, if FULL cannot get the most.
+            context.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.GetThreadContext(threadHandle, ref context))
+            {
+                this.Status.Log(
+                    "Unable to get thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                threadHandle = IntPtr.Zero;
+                cx = new WinApi.CONTEXT();
+                return false;
+            }
+
+            cx = context;
+            return true;
+        }
+
+        /// <summary>
+        /// Apply the thread context modification and resume the thread.
+        /// </summary>
+        /// <param name="threadHandle">A handle of the thread to be modified.</param>
+        /// <param name="cx">The context of the thread to be modified.</param>
+        /// <returns>Returns true if the thread was successfully modified and resumed.</returns>
+        protected bool EndEditThread(ref IntPtr threadHandle, ref WinApi.CONTEXT cx)
+        {
+            // TODO: get the most context data from the thread, if FULL cannot get the most.
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+            if (!WinApi.SetThreadContext(threadHandle, ref cx))
+            {
+                this.Status.Log(
+                    "Unable to set thread context when setting instruction pointer. Error: " +
+                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                WinApi.CloseHandle(threadHandle);
+                return false;
+            }
+
+            uint res = WinApi.ResumeThread(threadHandle);
+            unchecked
+            {
+                if (res == (uint)(-1))
+                {
+                    this.Status.Log(
+                        "Unable to resume thread when setting instruction pointer. Error: " +
+                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    WinApi.CloseHandle(threadHandle);
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #region Debug Events
@@ -975,7 +987,7 @@
                 processSecurity.nLength = Marshal.SizeOf(processSecurity);
                 threadSecurity.nLength = Marshal.SizeOf(threadSecurity);
 
-                //Open Notepad
+                // Open the process.
                 res = WinApi.CreateProcess(
                     application,
                     commandLine,
@@ -1062,83 +1074,83 @@
                         switch (de.u.Exception.ExceptionRecord.ExceptionCode)
                         {
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
-                                continueStatus = OnSingleStepDebugException(ref de);
+                                continueStatus = this.OnSingleStepDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ACCESS_VIOLATION:
-                                continueStatus = OnAccessViolationDebugException(ref de);
+                                continueStatus = this.OnAccessViolationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ARRAY_BOUNDS_EXCEEDED:
-                                continueStatus = OnArrayBoundsExceededDebugException(ref de);
+                                continueStatus = this.OnArrayBoundsExceededDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
-                                continueStatus = OnBreakpointDebugException(ref de);
+                                continueStatus = this.OnBreakpointDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.DATATYPE_MISALIGNMENT:
-                                continueStatus = OnDatatypeMisalignmentDebugException(ref de);
+                                continueStatus = this.OnDatatypeMisalignmentDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DENORMAL_OPERAND:
-                                continueStatus = OnFltDenormalOperandDebugException(ref de);
+                                continueStatus = this.OnFltDenormalOperandDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DIVIDE_BY_ZERO:
-                                continueStatus = OnFltDivideByZeroDebugException(ref de);
+                                continueStatus = this.OnFltDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INEXACT_RESULT:
-                                continueStatus = OnFltInexactResultDebugException(ref de);
+                                continueStatus = this.OnFltInexactResultDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INVALID_OPERATION:
-                                continueStatus = OnFltInvalidOperationDebugException(ref de);
+                                continueStatus = this.OnFltInvalidOperationDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_OVERFLOW:
-                                continueStatus = OnFltOverflowDebugException(ref de);
+                                continueStatus = this.OnFltOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_STACK_CHECK:
-                                continueStatus = OnFltStackCheckDebugException(ref de);
+                                continueStatus = this.OnFltStackCheckDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_UNDERFLOW:
-                                continueStatus = OnFltUnderflowDebugException(ref de);
+                                continueStatus = this.OnFltUnderflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ILLEGAL_INSTRUCTION:
-                                continueStatus = OnIllegalInstructionDebugException(ref de);
+                                continueStatus = this.OnIllegalInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.IN_PAGE_ERROR:
-                                continueStatus = OnInPageErrorDebugException(ref de);
+                                continueStatus = this.OnInPageErrorDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_DIVIDE_BY_ZERO:
-                                continueStatus = OnIntDivideByZeroDebugException(ref de);
+                                continueStatus = this.OnIntDivideByZeroDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_OVERFLOW:
-                                continueStatus = OnIntOverflowDebugException(ref de);
+                                continueStatus = this.OnIntOverflowDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.INVALID_DISPOSITION:
-                                continueStatus = OnInvalidDispositionDebugException(ref de);
+                                continueStatus = this.OnInvalidDispositionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.NONCONTINUABLE_EXCEPTION:
-                                continueStatus = OnNoncontinuableExceptionDebugException(ref de);
+                                continueStatus = this.OnNoncontinuableExceptionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.PRIV_INSTRUCTION:
-                                continueStatus = OnPrivInstructionDebugException(ref de);
+                                continueStatus = this.OnPrivInstructionDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
-                                continueStatus = OnStackOverflowDebugException(ref de);
+                                continueStatus = this.OnStackOverflowDebugException(ref de);
                                 break;
 
                             default:

@@ -44,7 +44,7 @@
         }
 
         /// <summary>
-        /// Gets a value indicating whether the target process is 64-bit or not.
+        /// Gets or sets a value indicating whether the target process is 64-bit or not.
         /// </summary>
         public bool Is64Bit { get; protected set; }
 
@@ -102,7 +102,7 @@
         protected IntPtr ProcHandle { get; set; }
 
         /// <summary>
-        /// Gets a logger used to report status updates, errors, etc.
+        /// Gets or sets a logger used to report status updates, errors, etc.
         /// </summary>
         protected Logger Status { get; set; }
 

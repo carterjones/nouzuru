@@ -6,14 +6,26 @@
     using System.Text;
     using Distorm3cs;
 
+    /// <summary>
+    /// A type of debugger that is used for monitoring the execution flow of a process.
+    /// </summary>
     public class Profiler : Debugger
     {
         #region Properties
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the initial breakpoint has been hit.
+        /// </summary>
         public bool InitialBreakpointHit { get; protected set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether a value should be restored when a single step exception is hit.
+        /// </summary>
         protected bool RestoreBreakpointOnExceptionSingleStep { get; set; }
 
+        /// <summary>
+        /// Gets or sets the address of a breakpoint that was just hit.
+        /// </summary>
         protected IntPtr BreakpointAddressJustHit { get; set; }
 
         #endregion
@@ -40,46 +52,11 @@
         }
 
         /// <summary>
-        /// Disassembles the area around the specified address to find the length of the instruction that precedes the
-        /// instruction at the specified address.
+        /// Handles the EXCEPTION_BREAKPOINT debug exception.
+        /// Causes the process to trigger a single step debug exception.
         /// </summary>
-        /// <param name="address">The address that occurs after the instruction of interest.</param>
-        /// <returns>Returns the size of the instruction that occurs before the specified address.</returns>
-        private uint GetPreviousInstructionSize(IntPtr address)
-        {
-            if (!this.IsOpen)
-            {
-                return 0;
-            }
-
-            // Read the memory around the address. Read from an address that is at least two instructions away from
-            // where the target address's instruction occurs.
-            IntPtr beginBufAddress = new IntPtr(address.ToInt64() - 28);
-            int bufSize = 50;
-            byte[] buffer = Enumerable.Repeat((byte)0, bufSize).ToArray();
-            if (!this.Read(beginBufAddress, buffer))
-            {
-#if DEBUG
-                this.Status.Log("Could not read memory at " + this.IntPtrToFormattedAddress(beginBufAddress));
-#endif
-                return 0;
-            }
-
-            // Disassemble the memory around the address.
-            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
-
-            for (uint i = 0; i < insts.Length; ++i)
-            {
-                if (insts[i].addr >= (ulong)address.ToInt64())
-                {
-                    return insts[i - 1].size;
-                }
-            }
-
-            // Return nothing if a compatible instruction is not found.
-            return 0;
-        }
-
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (!this.InitialBreakpointHit)
@@ -98,6 +75,12 @@
             return base.OnBreakpointDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the EXCEPTION_SINGLE_STEP debug exception.
+        /// Logs information about the thread state when the exception is hit.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
             WinApi.ThreadAccess thread_rights =
@@ -147,7 +130,6 @@
                     "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
                     "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
 #endif
-
             }
 #if WIN64
             uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx.Rip));
@@ -213,6 +195,47 @@
             }
 #endif
             return base.OnSingleStepDebugException(ref de);
+        }
+
+        /// <summary>
+        /// Disassembles the area around the specified address to find the length of the instruction that precedes the
+        /// instruction at the specified address.
+        /// </summary>
+        /// <param name="address">The address that occurs after the instruction of interest.</param>
+        /// <returns>Returns the size of the instruction that occurs before the specified address.</returns>
+        private uint GetPreviousInstructionSize(IntPtr address)
+        {
+            if (!this.IsOpen)
+            {
+                return 0;
+            }
+
+            // Read the memory around the address. Read from an address that is at least two instructions away from
+            // where the target address's instruction occurs.
+            IntPtr beginBufAddress = new IntPtr(address.ToInt64() - 28);
+            int bufSize = 50;
+            byte[] buffer = Enumerable.Repeat((byte)0, bufSize).ToArray();
+            if (!this.Read(beginBufAddress, buffer))
+            {
+#if DEBUG
+                this.Status.Log("Could not read memory at " + this.IntPtrToFormattedAddress(beginBufAddress));
+#endif
+                return 0;
+            }
+
+            // Disassemble the memory around the address.
+            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
+
+            for (uint i = 0; i < insts.Length; ++i)
+            {
+                if (insts[i].addr >= (ulong)address.ToInt64())
+                {
+                    return insts[i - 1].size;
+                }
+            }
+
+            // Return nothing if a compatible instruction is not found.
+            return 0;
         }
 
         #endregion
