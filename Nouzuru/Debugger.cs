@@ -7,6 +7,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading;
+    using Logger;
 
     /// <summary>
     /// A simple, but extensible debugger class that provides core debugging traps.
@@ -25,6 +26,16 @@
         /// The thread that is used to run the debug loop.
         /// </summary>
         private Thread debugThread;
+
+        /// <summary>
+        /// True if the debug thread initialization has completed.
+        /// </summary>
+        private bool debugThreadInitComplete = false;
+
+        /// <summary>
+        /// True if the debug thread initialization was successful.
+        /// </summary>
+        private bool debugThreadInitSuccess = false;
 
         /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
@@ -128,6 +139,28 @@
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Launches a process in debug mode using the executable at the supplied path.
+        /// </summary>
+        /// <param name="filePath">The location of the executable to be launched.</param>
+        /// <returns>Returns true if the process was successfully started in debug mode.</returns>
+        public bool CreateAndDebug(string filePath)
+        {
+            if (this.debugThread != null && this.debugThread.IsAlive)
+            {
+                this.debugThread.Join();
+            }
+
+            this.debugThread = new Thread(this.StartDebugLoop);
+            this.debugThread.Start(filePath);
+            while (!this.debugThreadInitComplete)
+            {
+                Thread.Sleep(1);
+            }
+
+            return this.debugThreadInitSuccess;
+        }
 
         protected bool BeginEditThread(uint threadId, out IntPtr hThread, out WinApi.CONTEXT cx)
         {
@@ -396,9 +429,14 @@
                 this.debugThread.Join();
             }
 
-            this.debugThread = new Thread(this.DebugLoop);
+            this.debugThread = new Thread(this.StartDebugLoop);
             this.debugThread.Start();
-            return this.debugThread.IsAlive;
+            while (!this.debugThreadInitComplete)
+            {
+                Thread.Sleep(1);
+            }
+
+            return this.debugThreadInitSuccess;
         }
 
         /// <summary>
@@ -857,60 +895,163 @@
         #endregion
 
         /// <summary>
+        /// Starts the main debug loop, optionally creating a process from the supplied file path.
+        /// </summary>
+        /// <param name="objectFilePath">An optional file path to be used when creating a process to debug.</param>
+        private void StartDebugLoop(object objectFilePath = null)
+        {
+            string filePath;
+            if (objectFilePath == null || objectFilePath.GetType() != typeof(string))
+            {
+                filePath = string.Empty;
+            }
+            else
+            {
+                filePath = (string)objectFilePath;
+            }
+
+            if (filePath == string.Empty)
+            {
+                if (!this.IsOpen)
+                {
+                    return;
+                }
+
+                if (!WinApi.DebugActiveProcess((uint)this.PID))
+                {
+#if DEBUG
+                    this.Status.Log("Cannot debug. Error: " + Marshal.GetLastWin32Error(), Logger.Level.HIGH);
+#endif
+                    return;
+                }
+                else if (!WinApi.DebugSetProcessKillOnExit(false))
+                {
+#if DEBUG
+                    this.Status.Log("Cannot exit cleanly in the future.", Logger.Level.MEDIUM);
+#endif
+                }
+                else
+                {
+#if DEBUG
+                    this.Status.Log("Now debugging.", Logger.Level.NONE);
+#endif
+                    this.allowedToDebug = true;
+                    this.threadMayExit = false;
+                }
+
+#if DEBUG
+                this.Status.Log("ProcessThreadId: " + this.ThreadID);
+#endif
+                WinApi.ThreadAccess thread_rights =
+                    WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT | WinApi.ThreadAccess.SUSPEND_RESUME;
+                IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, (uint)this.ThreadID);
+#if DEBUG
+                this.Status.Log("hThread: " + this.IntPtrToFormattedAddress(threadHandle));
+#endif
+                WinApi.CONTEXT cx = new WinApi.CONTEXT();
+                cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+                WinApi.GetThreadContext(threadHandle, ref cx);
+                cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
+                cx.Dr7 =
+                    (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
+                bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
+                WinApi.CloseHandle(threadHandle);
+                this.DebugLoop();
+            }
+            else
+            {
+                if (!SysInteractor.IsInitialized)
+                {
+                    SysInteractor.Init();
+                }
+
+                bool res = false;
+                string application = filePath;
+                string commandLine = string.Empty;
+                WinApi.PROCESS_INFORMATION procInfo = new WinApi.PROCESS_INFORMATION();
+                WinApi.STARTUPINFO startupInfo = new WinApi.STARTUPINFO();
+                WinApi.SECURITY_ATTRIBUTES processSecurity = new WinApi.SECURITY_ATTRIBUTES();
+                WinApi.SECURITY_ATTRIBUTES threadSecurity = new WinApi.SECURITY_ATTRIBUTES();
+                processSecurity.nLength = Marshal.SizeOf(processSecurity);
+                threadSecurity.nLength = Marshal.SizeOf(threadSecurity);
+
+                //Open Notepad
+                res = WinApi.CreateProcess(
+                    application,
+                    commandLine,
+                    ref processSecurity,
+                    ref threadSecurity,
+                    false,
+                    (uint)WinApi.ProcessCreationFlags.DEBUG_PROCESS,
+                    IntPtr.Zero,
+                    null,
+                    ref startupInfo,
+                    out procInfo);
+                if (!res)
+                {
+                    return;
+                }
+
+                this.ProcHandle = procInfo.hProcess;
+                if (this.ProcHandle != null)
+                {
+                    try
+                    {
+                        this.Proc = System.Diagnostics.Process.GetProcessById(procInfo.dwProcessId);
+                    }
+                    catch (ArgumentException)
+                    {
+                        WinApi.CloseHandle(this.ProcHandle);
+                        return;
+                    }
+
+                    bool isWow64;
+                    WinApi.IsWow64Process(this.ProcHandle, out isWow64);
+
+                    // 64-bit process detection.
+                    // Note: This does not take into account for PAE. No plans to support PAE currently exist.
+                    if (isWow64)
+                    {
+                        // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
+                        this.Is64Bit = false;
+                    }
+                    else
+                    {
+                        // If it is not Wow64, then the process is natively running, so set it according to the OS
+                        // architecture.
+                        this.Is64Bit = SysInteractor.Is64Bit;
+                    }
+
+                    if (!WinApi.DebugSetProcessKillOnExit(false))
+                    {
+#if DEBUG
+                        this.Status.Log("Cannot exit cleanly in the future.", Logger.Level.MEDIUM);
+#endif
+                    }
+                    else
+                    {
+#if DEBUG
+                        this.Status.Log("Now debugging.", Logger.Level.NONE);
+#endif
+                        this.allowedToDebug = true;
+                        this.threadMayExit = false;
+                    }
+
+                    this.DebugLoop();
+                }
+
+                this.Status.Log("Unable to open the target process.", Logger.Level.HIGH);
+            }
+        }
+
+        /// <summary>
         /// This is the main debug loop, which is called as a single thread that attaches to the target process, using
         /// debugging privileges.
         /// </summary>
         private void DebugLoop()
         {
-            if (!this.IsOpen)
-            {
-                return;
-            }
-
-#if DEBUG
-            this.Status.Log("pid: " + this.PID);
-#endif
-            if (!WinApi.DebugActiveProcess((uint)this.PID))
-            {
-#if DEBUG
-                this.Status.Log("Cannot debug.", Logger.Logger.Level.HIGH);
-#endif
-            }
-            else if (!WinApi.DebugSetProcessKillOnExit(false))
-            {
-#if DEBUG
-                this.Status.Log("Cannot exit cleanly in the future.", Logger.Logger.Level.MEDIUM);
-#endif
-            }
-            else
-            {
-#if DEBUG
-                this.Status.Log("Now debugging.", Logger.Logger.Level.NONE);
-#endif
-                this.allowedToDebug = true;
-                this.threadMayExit = false;
-            }
-
             WinApi.DEBUG_EVENT de = new WinApi.DEBUG_EVENT();
             WinApi.DbgCode continueStatus = WinApi.DbgCode.CONTINUE;
-#if DEBUG
-            this.Status.Log("ProcessThreadId: " + this.ThreadID);
-#endif
-            WinApi.ThreadAccess thread_rights =
-                WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT | WinApi.ThreadAccess.SUSPEND_RESUME;
-            IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, (uint)this.ThreadID);
-#if DEBUG
-            this.Status.Log("hThread: " + this.IntPtrToFormattedAddress(threadHandle));
-#endif
-            WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS | WinApi.CONTEXT_FLAGS.ALL | WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.CONTROL | WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS;
-            WinApi.GetThreadContext(threadHandle, ref cx);
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-            cx.Dr7 =
-                (ulong)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
-            bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
-            WinApi.CloseHandle(threadHandle);
-            threadHandle = IntPtr.Zero;
 
             while (this.Proc.HasExited == false && this.allowedToDebug == true)
             {
@@ -1016,6 +1157,8 @@
                         break;
 
                     case (uint)WinApi.DebugEventType.CREATE_PROCESS_DEBUG_EVENT:
+                        this.debugThreadInitSuccess = true;
+                        this.debugThreadInitComplete = true;
                         continueStatus = this.OnCreateProcessDebugEvent(ref de);
                         break;
 
@@ -1049,6 +1192,8 @@
 
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
             }
+
+            this.debugThreadInitComplete = true;
 
             if (!WinApi.DebugActiveProcessStop((uint)this.PID))
             {
