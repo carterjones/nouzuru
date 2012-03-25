@@ -55,7 +55,7 @@
         {
             get
             {
-                return (this.Proc != null) && (this.Proc.Id != 0);
+                return (this.Proc != null) && (this.Proc.Id != 0) && !this.Proc.HasExited;
             }
         }
 
