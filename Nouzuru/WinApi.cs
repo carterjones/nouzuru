@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.InteropServices;
+    using System.Text;
     using Microsoft.Win32.SafeHandles;
 
     /// <summary>
@@ -34,6 +35,30 @@
         #endregion
 
         #region Enumerations
+
+        [Flags]
+        public enum FileMapAccess : uint
+        {
+            FileMapCopy = 0x0001,
+            FileMapWrite = 0x0002,
+            FileMapRead = 0x0004,
+            FileMapAllAccess = 0x001f,
+            fileMapExecute = 0x0020,
+        }
+
+        [Flags]
+        public enum FileMapProtection : uint
+        {
+            PageReadonly = 0x02,
+            PageReadWrite = 0x04,
+            PageWriteCopy = 0x08,
+            PageExecuteRead = 0x20,
+            PageExecuteReadWrite = 0x40,
+            SectionCommit = 0x8000000,
+            SectionImage = 0x1000000,
+            SectionNoCache = 0x10000000,
+            SectionReserve = 0x4000000,
+        }
 
         /// <summary>
         /// Documentation available at http://msdn.microsoft.com/en-us/library/windows/desktop/aa366786.aspx.
@@ -209,6 +234,15 @@
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ContinueDebugEvent(uint dwProcessId, uint dwThreadId, DbgCode dwContinueStatus);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr CreateFileMapping(
+            IntPtr hFile,
+            IntPtr lpFileMappingAttributes,
+            FileMapProtection flProtect,
+            uint dwMaximumSizeHigh,
+            uint dwMaximumSizeLow,
+            [MarshalAs(UnmanagedType.LPTStr)] string lpName);
+
         [DllImport("kernel32.dll")]
         public static extern bool CreateProcess(
             string lpApplicationName,
@@ -242,6 +276,13 @@
         public static extern bool DebugSetProcessKillOnExit(bool killOnExit);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetFileSize(IntPtr hFile, IntPtr lpFileSizeHigh);
+
+        [DllImport("psapi.dll", SetLastError = true)]
+        public static extern uint GetMappedFileName(
+            IntPtr hProcess, IntPtr lpv, StringBuilder lpFilename, uint nSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -251,6 +292,9 @@
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetProcessId(IntPtr hProcess);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -258,6 +302,14 @@
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool IsWow64Process(IntPtr hProcess, out bool wow64Process);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr MapViewOfFile(
+            IntPtr hFileMappingObject,
+            FileMapAccess dwDesiredAccess,
+            uint dwFileOffsetHigh,
+            uint dwFileOffsetLow,
+            uint dwNumberOfBytesToMap);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(ProcessRights dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
@@ -289,6 +341,9 @@
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ReadProcessMemory(
             IntPtr hProcess, IntPtr lpBaseAddress, IntPtr lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr VirtualAllocEx(
@@ -521,63 +576,113 @@
             public PTHREAD_START_ROUTINE lpStartAddress;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
-        public struct DEBUG_EVENT_Union
-        {
-            [FieldOffset(0)]
-            public EXCEPTION_DEBUG_INFO Exception;
-            /*
-            [FieldOffset(0)]
-            public CREATE_THREAD_DEBUG_INFO CreateThread;
-
-            [FieldOffset(0)]
-            public CREATE_PROCESS_DEBUG_INFO CreateProcessInfo;
-
-            [FieldOffset(0)]
-            public EXIT_THREAD_DEBUG_INFO ExitThread;
-
-            [FieldOffset(0)]
-            public EXIT_PROCESS_DEBUG_INFO ExitProcess;
-
-            [FieldOffset(0)]
-            public LOAD_DLL_DEBUG_INFO LoadDll;
-
-            [FieldOffset(0)]
-            public UNLOAD_DLL_DEBUG_INFO UnloadDll;
-
-            [FieldOffset(0)]
-            public OUTPUT_DEBUG_STRING_INFO DebugString;
-
-            [FieldOffset(0)]
-            public RIP_INFO RipInfo;*/
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         public struct DEBUG_EVENT
         {
             public uint dwDebugEventCode;
             public uint dwProcessId;
             public uint dwThreadId;
-            public DEBUG_EVENT_Union u;
+
+#if WIN64
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)]
+#else
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 84, ArraySubType = UnmanagedType.U1)]
+#endif
+            private byte[] debugInfo;
+
+            public EXCEPTION_DEBUG_INFO Exception
+            {
+                get { return GetDebugInfo<EXCEPTION_DEBUG_INFO>(); }
+            }
+
+            public CREATE_THREAD_DEBUG_INFO CreateThread
+            {
+                get { return GetDebugInfo<CREATE_THREAD_DEBUG_INFO>(); }
+            }
+
+            public CREATE_PROCESS_DEBUG_INFO CreateProcessInfo
+            {
+                get { return GetDebugInfo<CREATE_PROCESS_DEBUG_INFO>(); }
+            }
+
+            public EXIT_THREAD_DEBUG_INFO ExitThread
+            {
+                get { return GetDebugInfo<EXIT_THREAD_DEBUG_INFO>(); }
+            }
+
+            public EXIT_PROCESS_DEBUG_INFO ExitProcess
+            {
+                get { return GetDebugInfo<EXIT_PROCESS_DEBUG_INFO>(); }
+            }
+
+            public LOAD_DLL_DEBUG_INFO LoadDll
+            {
+                get { return GetDebugInfo<LOAD_DLL_DEBUG_INFO>(); }
+            }
+
+            public UNLOAD_DLL_DEBUG_INFO UnloadDll
+            {
+                get { return GetDebugInfo<UNLOAD_DLL_DEBUG_INFO>(); }
+            }
+
+            public OUTPUT_DEBUG_STRING_INFO DebugString
+            {
+                get { return GetDebugInfo<OUTPUT_DEBUG_STRING_INFO>(); }
+            }
+
+            public RIP_INFO RipInfo
+            {
+                get { return GetDebugInfo<RIP_INFO>(); }
+            }
+
+            private T GetDebugInfo<T>() where T : struct
+            {
+                var structSize = Marshal.SizeOf(typeof(T));
+                var pointer = Marshal.AllocHGlobal(structSize);
+                Marshal.Copy(this.debugInfo, 0, pointer, structSize);
+
+                var result = Marshal.PtrToStructure(pointer, typeof(T));
+                Marshal.FreeHGlobal(pointer);
+                return (T)result;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct EXCEPTION_DEBUG_INFO
         {
-            public EXCEPTION_RECORD ExceptionRecord;
+#if WIN64
+            public EXCEPTION_RECORD64 ExceptionRecord;
+#else
+            public EXCEPTION_RECORD32 ExceptionRecord;
+#endif
             public uint dwFirstChance;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct EXCEPTION_RECORD
+        public struct EXCEPTION_RECORD32
+        {
+            public uint ExceptionCode;
+            public uint ExceptionFlags;
+            [MarshalAs(UnmanagedType.SysUInt)]
+            public IntPtr ExceptionRecord;
+            [MarshalAs(UnmanagedType.SysUInt)]
+            public IntPtr ExceptionAddress;
+            public uint NumberParameters;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
+            public uint[] ExceptionInformation;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct EXCEPTION_RECORD64
         {
             public uint ExceptionCode;
             public uint ExceptionFlags;
             public IntPtr ExceptionRecord;
             public IntPtr ExceptionAddress;
             public uint NumberParameters;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
-            public uint[] ExceptionInformation;
+            private uint __unusedAlignment;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
+            public ulong[] ExceptionInformation;
         }
 
         [StructLayout(LayoutKind.Sequential)]
