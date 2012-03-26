@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.InteropServices;
+    using System.Text;
     using Microsoft.Win32.SafeHandles;
 
     /// <summary>
@@ -34,6 +35,30 @@
         #endregion
 
         #region Enumerations
+
+        [Flags]
+        public enum FileMapAccess : uint
+        {
+            FileMapCopy = 0x0001,
+            FileMapWrite = 0x0002,
+            FileMapRead = 0x0004,
+            FileMapAllAccess = 0x001f,
+            fileMapExecute = 0x0020,
+        }
+
+        [Flags]
+        public enum FileMapProtection : uint
+        {
+            PageReadonly = 0x02,
+            PageReadWrite = 0x04,
+            PageWriteCopy = 0x08,
+            PageExecuteRead = 0x20,
+            PageExecuteReadWrite = 0x40,
+            SectionCommit = 0x8000000,
+            SectionImage = 0x1000000,
+            SectionNoCache = 0x10000000,
+            SectionReserve = 0x4000000,
+        }
 
         /// <summary>
         /// Documentation available at http://msdn.microsoft.com/en-us/library/windows/desktop/aa366786.aspx.
@@ -209,6 +234,15 @@
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ContinueDebugEvent(uint dwProcessId, uint dwThreadId, DbgCode dwContinueStatus);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr CreateFileMapping(
+            IntPtr hFile,
+            IntPtr lpFileMappingAttributes,
+            FileMapProtection flProtect,
+            uint dwMaximumSizeHigh,
+            uint dwMaximumSizeLow,
+            [MarshalAs(UnmanagedType.LPTStr)] string lpName);
+
         [DllImport("kernel32.dll")]
         public static extern bool CreateProcess(
             string lpApplicationName,
@@ -242,6 +276,13 @@
         public static extern bool DebugSetProcessKillOnExit(bool killOnExit);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetFileSize(IntPtr hFile, IntPtr lpFileSizeHigh);
+
+        [DllImport("psapi.dll", SetLastError = true)]
+        public static extern uint GetMappedFileName(
+            IntPtr hProcess, IntPtr lpv, StringBuilder lpFilename, uint nSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -258,6 +299,14 @@
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool IsWow64Process(IntPtr hProcess, out bool wow64Process);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr MapViewOfFile(
+            IntPtr hFileMappingObject,
+            FileMapAccess dwDesiredAccess,
+            uint dwFileOffsetHigh,
+            uint dwFileOffsetLow,
+            uint dwNumberOfBytesToMap);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr OpenProcess(ProcessRights dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
@@ -289,6 +338,9 @@
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool ReadProcessMemory(
             IntPtr hProcess, IntPtr lpBaseAddress, IntPtr lpBuffer, uint dwSize, out uint lpNumberOfBytesRead);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool UnmapViewOfFile(IntPtr lpBaseAddress);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr VirtualAllocEx(
