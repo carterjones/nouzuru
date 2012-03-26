@@ -1071,7 +1071,7 @@
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
-                        switch (de.u.Exception.ExceptionRecord.ExceptionCode)
+                        switch (de.Exception.ExceptionRecord.ExceptionCode)
                         {
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 continueStatus = this.OnSingleStepDebugException(ref de);
@@ -1152,12 +1152,11 @@
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
                                 continueStatus = this.OnStackOverflowDebugException(ref de);
                                 break;
-
                             default:
 #if WIN64
                                 this.Status.Log(
                                     "An unhandled (default) debug exception occurred in 64-bit mode. " + 
-                                    "Exception code: " + de.u.Exception.ExceptionRecord.ExceptionCode);
+                                    "Exception code: " + de.Exception.ExceptionRecord.ExceptionCode);
 #endif
                                 break;
                         }

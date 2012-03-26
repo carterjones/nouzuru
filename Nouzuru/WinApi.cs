@@ -576,63 +576,113 @@
             public PTHREAD_START_ROUTINE lpStartAddress;
         }
 
-        [StructLayout(LayoutKind.Explicit)]
-        public struct DEBUG_EVENT_Union
-        {
-            [FieldOffset(0)]
-            public EXCEPTION_DEBUG_INFO Exception;
-            /*
-            [FieldOffset(0)]
-            public CREATE_THREAD_DEBUG_INFO CreateThread;
-
-            [FieldOffset(0)]
-            public CREATE_PROCESS_DEBUG_INFO CreateProcessInfo;
-
-            [FieldOffset(0)]
-            public EXIT_THREAD_DEBUG_INFO ExitThread;
-
-            [FieldOffset(0)]
-            public EXIT_PROCESS_DEBUG_INFO ExitProcess;
-
-            [FieldOffset(0)]
-            public LOAD_DLL_DEBUG_INFO LoadDll;
-
-            [FieldOffset(0)]
-            public UNLOAD_DLL_DEBUG_INFO UnloadDll;
-
-            [FieldOffset(0)]
-            public OUTPUT_DEBUG_STRING_INFO DebugString;
-
-            [FieldOffset(0)]
-            public RIP_INFO RipInfo;*/
-        }
-
         [StructLayout(LayoutKind.Sequential)]
         public struct DEBUG_EVENT
         {
             public uint dwDebugEventCode;
             public uint dwProcessId;
             public uint dwThreadId;
-            public DEBUG_EVENT_Union u;
+
+#if WIN64
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)]
+#else
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 84, ArraySubType = UnmanagedType.U1)]
+#endif
+            private byte[] debugInfo;
+
+            public EXCEPTION_DEBUG_INFO Exception
+            {
+                get { return GetDebugInfo<EXCEPTION_DEBUG_INFO>(); }
+            }
+
+            public CREATE_THREAD_DEBUG_INFO CreateThread
+            {
+                get { return GetDebugInfo<CREATE_THREAD_DEBUG_INFO>(); }
+            }
+
+            public CREATE_PROCESS_DEBUG_INFO CreateProcessInfo
+            {
+                get { return GetDebugInfo<CREATE_PROCESS_DEBUG_INFO>(); }
+            }
+
+            public EXIT_THREAD_DEBUG_INFO ExitThread
+            {
+                get { return GetDebugInfo<EXIT_THREAD_DEBUG_INFO>(); }
+            }
+
+            public EXIT_PROCESS_DEBUG_INFO ExitProcess
+            {
+                get { return GetDebugInfo<EXIT_PROCESS_DEBUG_INFO>(); }
+            }
+
+            public LOAD_DLL_DEBUG_INFO LoadDll
+            {
+                get { return GetDebugInfo<LOAD_DLL_DEBUG_INFO>(); }
+            }
+
+            public UNLOAD_DLL_DEBUG_INFO UnloadDll
+            {
+                get { return GetDebugInfo<UNLOAD_DLL_DEBUG_INFO>(); }
+            }
+
+            public OUTPUT_DEBUG_STRING_INFO DebugString
+            {
+                get { return GetDebugInfo<OUTPUT_DEBUG_STRING_INFO>(); }
+            }
+
+            public RIP_INFO RipInfo
+            {
+                get { return GetDebugInfo<RIP_INFO>(); }
+            }
+
+            private T GetDebugInfo<T>() where T : struct
+            {
+                var structSize = Marshal.SizeOf(typeof(T));
+                var pointer = Marshal.AllocHGlobal(structSize);
+                Marshal.Copy(this.debugInfo, 0, pointer, structSize);
+
+                var result = Marshal.PtrToStructure(pointer, typeof(T));
+                Marshal.FreeHGlobal(pointer);
+                return (T)result;
+            }
         }
 
         [StructLayout(LayoutKind.Sequential)]
         public struct EXCEPTION_DEBUG_INFO
         {
-            public EXCEPTION_RECORD ExceptionRecord;
+#if WIN64
+            public EXCEPTION_RECORD64 ExceptionRecord;
+#else
+            public EXCEPTION_RECORD32 ExceptionRecord;
+#endif
             public uint dwFirstChance;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        public struct EXCEPTION_RECORD
+        public struct EXCEPTION_RECORD32
+        {
+            public uint ExceptionCode;
+            public uint ExceptionFlags;
+            [MarshalAs(UnmanagedType.SysUInt)]
+            public IntPtr ExceptionRecord;
+            [MarshalAs(UnmanagedType.SysUInt)]
+            public IntPtr ExceptionAddress;
+            public uint NumberParameters;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
+            public uint[] ExceptionInformation;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct EXCEPTION_RECORD64
         {
             public uint ExceptionCode;
             public uint ExceptionFlags;
             public IntPtr ExceptionRecord;
             public IntPtr ExceptionAddress;
             public uint NumberParameters;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
-            public uint[] ExceptionInformation;
+            private uint __unusedAlignment;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
+            public ulong[] ExceptionInformation;
         }
 
         [StructLayout(LayoutKind.Sequential)]
