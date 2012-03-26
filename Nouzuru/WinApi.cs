@@ -292,6 +292,9 @@
         public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetProcessId(IntPtr hProcess);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
 
         [DllImport("kernel32.dll", SetLastError = true)]
