@@ -969,6 +969,7 @@
                 bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
                 WinApi.CloseHandle(threadHandle);
                 this.DebugLoop();
+                return;
             }
             else
             {
@@ -1050,6 +1051,8 @@
                     }
 
                     this.DebugLoop();
+
+                    return;
                 }
 
                 this.Status.Log("Unable to open the target process.", Logger.Level.HIGH);
