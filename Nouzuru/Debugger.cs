@@ -144,16 +144,20 @@
         /// Launches a process in debug mode using the executable at the supplied path.
         /// </summary>
         /// <param name="filePath">The location of the executable to be launched.</param>
+        /// <param name="parameters">The command line parameters to pass to the executable when it is launched.</param>
         /// <returns>Returns true if the process was successfully started in debug mode.</returns>
-        public bool CreateAndDebug(string filePath)
+        public bool CreateAndDebug(string filePath, string parameters = "")
         {
             if (this.debugThread != null && this.debugThread.IsAlive)
             {
                 this.debugThread.Join();
             }
 
+            DebugLoopArguments dla = new DebugLoopArguments();
+            dla.FilePath = filePath;
+            dla.Parameters = parameters;
             this.debugThread = new Thread(this.StartDebugLoop);
-            this.debugThread.Start(filePath);
+            this.debugThread.Start(dla);
             while (!this.debugThreadInitComplete)
             {
                 Thread.Sleep(1);
@@ -909,20 +913,29 @@
         /// <summary>
         /// Starts the main debug loop, optionally creating a process from the supplied file path.
         /// </summary>
-        /// <param name="objectFilePath">An optional file path to be used when creating a process to debug.</param>
-        private void StartDebugLoop(object objectFilePath = null)
+        /// <param name="arguments">An optional set of arguments that dictate how an executable is debugged.</param>
+        private void StartDebugLoop(object arguments = null)
         {
             string filePath;
-            if (objectFilePath == null || objectFilePath.GetType() != typeof(string))
+            string parameters;
+            if (arguments == null)
             {
                 filePath = string.Empty;
+                parameters = string.Empty;
+            }
+            else if (arguments.GetType() == typeof(DebugLoopArguments))
+            {
+                DebugLoopArguments dla = (DebugLoopArguments)arguments;
+                filePath = dla.FilePath;
+                parameters = dla.Parameters;
             }
             else
             {
-                filePath = (string)objectFilePath;
+                filePath = string.Empty;
+                parameters = string.Empty;
             }
 
-            if (filePath == string.Empty)
+            if (arguments == null)
             {
                 if (!this.IsOpen)
                 {
@@ -981,6 +994,11 @@
                 bool res = false;
                 string application = filePath;
                 string commandLine = string.Empty;
+                if (!string.IsNullOrEmpty(parameters))
+                {
+                    commandLine = filePath + " " + parameters;
+                }
+
                 WinApi.PROCESS_INFORMATION procInfo = new WinApi.PROCESS_INFORMATION();
                 WinApi.STARTUPINFO startupInfo = new WinApi.STARTUPINFO();
                 WinApi.SECURITY_ATTRIBUTES processSecurity = new WinApi.SECURITY_ATTRIBUTES();
@@ -1218,6 +1236,26 @@
             return;
         }
         
+        #endregion
+
+        #region Structures
+
+        /// <summary>
+        /// Arguments passed to the debug thread.
+        /// </summary>
+        private struct DebugLoopArguments
+        {
+            /// <summary>
+            /// The path to the executable to be debugged.
+            /// </summary>
+            public string FilePath;
+
+            /// <summary>
+            /// The command line parameters to pass to the executable when it is launched.
+            /// </summary>
+            public string Parameters;
+        }
+
         #endregion
     }
 }
