@@ -32,18 +32,6 @@
 
         #endregion
 
-        #region Constructors
-
-        /// <summary>
-        /// Initializes a new instance of the Patcher class.
-        /// </summary>
-        public Patcher()
-        {
-            this.StartFreezeThread();
-        }
-
-        #endregion
-
         #region Enumerations
 
         /// <summary>
@@ -226,6 +214,12 @@
                     lock (this.saveValuesLock)
                     {
                         this.savedValues.Remove(savedAddress);
+
+                        // Stop the freeze thread, if this is the last item in the saved address list.
+                        if (this.savedValues.Count == 0 && this.freezeThread != null)
+                        {
+                            this.freezeThread.Abort();
+                        }
                     }
                 }
 
@@ -272,6 +266,12 @@
                 lock (this.saveValuesLock)
                 {
                     this.savedValues.Clear();
+
+                    // Stop the freeze thread, since no items remain in the addresss list.
+                    if (this.freezeThread != null)
+                    {
+                        this.freezeThread.Abort();
+                    }
                 }
             }
 
@@ -478,6 +478,12 @@
             lock (this.saveValuesLock)
             {
                 this.savedValues.Add(address);
+            }
+
+            // Start the freeze thread, if it is not currently running.
+            if (this.freezeThread == null || !this.freezeThread.IsAlive)
+            {
+                this.StartFreezeThread();
             }
         }
 
