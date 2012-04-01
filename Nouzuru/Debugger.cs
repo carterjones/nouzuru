@@ -952,7 +952,7 @@
                 filePath = string.Empty;
                 parameters = string.Empty;
             }
-            else if (arguments.GetType() == typeof(DebugLoopArguments))
+            else if (arguments is DebugLoopArguments)
             {
                 DebugLoopArguments dla = (DebugLoopArguments)arguments;
                 filePath = dla.FilePath;
