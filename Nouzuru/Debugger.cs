@@ -115,6 +115,11 @@
         #region Properties
 
         /// <summary>
+        /// Gets or sets a value that indicates whether 1st chance exceptions will be ignored.
+        /// </summary>
+        public bool IgnoreFirstChanceExceptions { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether this Debugger is active.
         /// </summary>
         public bool IsDebugging
@@ -1102,6 +1107,12 @@
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
+                        if (this.IgnoreFirstChanceExceptions && de.Exception.dwFirstChance != 0)
+                        {
+                            continueStatus = WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
+                            break;
+                        }
+
                         switch (de.Exception.ExceptionRecord.ExceptionCode)
                         {
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
