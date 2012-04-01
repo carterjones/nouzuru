@@ -819,6 +819,16 @@
         }
 
         /// <summary>
+        /// Handles the EXCEPTION_GUARD_PAGE debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnGuardPageDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            return WinApi.DbgCode.CONTINUE;
+        }
+
+        /// <summary>
         /// Handles the EXCEPTION_ILLEGAL_INSTRUCTION debug exception.
         /// </summary>
         /// <param name="de">The debug exception that was caught by the debugger.</param>
@@ -1140,6 +1150,10 @@
 
                             case (uint)WinApi.ExceptionType.FLT_UNDERFLOW:
                                 continueStatus = this.OnFltUnderflowDebugException(ref de);
+                                break;
+
+                            case (uint)WinApi.ExceptionType.GUARD_PAGE:
+                                continueStatus = this.OnGuardPageDebugException(ref de);
                                 break;
 
                             case (uint)WinApi.ExceptionType.ILLEGAL_INSTRUCTION:
