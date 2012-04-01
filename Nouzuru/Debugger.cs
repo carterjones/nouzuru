@@ -38,6 +38,12 @@
         private bool debugThreadInitSuccess = false;
 
         /// <summary>
+        /// If true, the debugger will set a breakpoint on the first instruction that will be executed by the main
+        /// module of the executable.
+        /// </summary>
+        private bool pauseOnFirstInst = false;
+
+        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
@@ -150,14 +156,19 @@
         /// </summary>
         /// <param name="filePath">The location of the executable to be launched.</param>
         /// <param name="parameters">The command line parameters to pass to the executable when it is launched.</param>
+        /// <param name="pauseOnFirstInst">
+        /// If true, the debugger will set a breakpoint on the first instruction that will be executed by the main
+        /// module of the executable.
+        /// </param>
         /// <returns>Returns true if the process was successfully started in debug mode.</returns>
-        public bool StartAndDebug(string filePath, string parameters = "")
+        public bool StartAndDebug(string filePath, string parameters = "", bool pauseOnFirstInst = false)
         {
             if (this.debugThread != null && this.debugThread.IsAlive)
             {
                 this.debugThread.Join();
             }
 
+            this.pauseOnFirstInst = pauseOnFirstInst;
             DebugLoopArguments dla = new DebugLoopArguments();
             dla.FilePath = filePath;
             dla.Parameters = parameters;
@@ -169,6 +180,20 @@
             }
 
             return this.debugThreadInitSuccess;
+        }
+
+        /// <summary>
+        /// Launches a process in debug mode using the executable at the supplied path.
+        /// </summary>
+        /// <param name="filePath">The location of the executable to be launched.</param>
+        /// <param name="pauseOnFirstInst">
+        /// If true, the debugger will set a breakpoint on the first instruction that will be executed by the main
+        /// module of the executable.
+        /// </param>
+        /// <returns>Returns true if the process was successfully started in debug mode.</returns>
+        public bool StartAndDebug(string filePath, bool pauseOnFirstInst)
+        {
+            return this.StartAndDebug(filePath, string.Empty, pauseOnFirstInst);
         }
 
         /// <summary>
@@ -1114,9 +1139,32 @@
         {
             WinApi.DEBUG_EVENT de = new WinApi.DEBUG_EVENT();
             WinApi.DbgCode continueStatus = WinApi.DbgCode.CONTINUE;
+            bool isFirstInstBreakpointSet = false;
 
             while (this.Proc.HasExited == false && this.allowedToDebug == true)
             {
+                if (!isFirstInstBreakpointSet && this.pauseOnFirstInst)
+                {
+                    try
+                    {
+                        // Attempt to set a breakpoint at the main module's entry point.
+                        this.SetSoftBP(this.Proc.MainModule.EntryPointAddress);
+                        isFirstInstBreakpointSet = true;
+                    }
+                    catch (System.ComponentModel.Win32Exception e)
+                    {
+                        if (e.NativeErrorCode == 299)
+                        {
+                            // Catch and ignore the partial ReadProcessMemory/WriteProcessMemory exception.
+                        }
+                        else
+                        {
+                            // Otherwise, log the exception message.
+                            this.Status.Log("Unhandled win32 exception: " + e.Message, Logger.Level.HIGH);
+                        }
+                    }
+                }
+
                 WinApi.WaitForDebugEvent(ref de, 100);
                 switch (de.dwDebugEventCode)
                 {
