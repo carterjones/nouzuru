@@ -115,7 +115,7 @@
         #region Properties
 
         /// <summary>
-        /// Gets or sets a value that indicates whether 1st chance exceptions will be ignored.
+        /// Gets or sets a value indicating whether 1st chance exceptions will be ignored.
         /// </summary>
         public bool IgnoreFirstChanceExceptions { get; set; }
 
