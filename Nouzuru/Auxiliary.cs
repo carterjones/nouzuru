@@ -58,5 +58,12 @@
 
             return "Empty filemap handle.";
         }
+
+        public static string GetFileNameFromHModule(IntPtr hModule)
+        {
+            StringBuilder filename = new StringBuilder(255);
+            WinApi.GetModuleFileName(IntPtr.Zero, filename, filename.Capacity);
+            return filename.ToString();
+        }
     }
 }

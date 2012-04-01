@@ -295,6 +295,10 @@
             IntPtr hProcess, IntPtr lpv, StringBuilder lpFilename, uint nSize);
 
         [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetModuleFileName(
+            [In] IntPtr hModule, [Out] StringBuilder lpFilename, [In] [MarshalAs(UnmanagedType.U4)] int nSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
 
         [DllImport("kernel32.dll", SetLastError = true)]
