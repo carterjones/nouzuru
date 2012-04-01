@@ -151,7 +151,7 @@
         /// <param name="filePath">The location of the executable to be launched.</param>
         /// <param name="parameters">The command line parameters to pass to the executable when it is launched.</param>
         /// <returns>Returns true if the process was successfully started in debug mode.</returns>
-        public bool CreateAndDebug(string filePath, string parameters = "")
+        public bool StartAndDebug(string filePath, string parameters = "")
         {
             if (this.debugThread != null && this.debugThread.IsAlive)
             {
