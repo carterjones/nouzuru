@@ -923,6 +923,20 @@
             return WinApi.DbgCode.CONTINUE;
         }
 
+        /// <summary>
+        /// Handles the default case where no debug exception can handle this debug event.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected virtual WinApi.DbgCode OnUnhandledDebugException(ref WinApi.DEBUG_EVENT de)
+        {
+            this.Status.Log(
+                "An unhandled (default) debug exception occurred. " +
+                "Exception code: 0x" + de.Exception.ExceptionRecord.ExceptionCode.ToString("x"),
+                Logger.Level.DEBUG);
+            return WinApi.DbgCode.CONTINUE;
+        }
+
         #endregion
 
         /// <summary>
@@ -1198,12 +1212,9 @@
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
                                 continueStatus = this.OnStackOverflowDebugException(ref de);
                                 break;
+
                             default:
-#if WIN64
-                                this.Status.Log(
-                                    "An unhandled (default) debug exception occurred in 64-bit mode. " + 
-                                    "Exception code: " + de.Exception.ExceptionRecord.ExceptionCode);
-#endif
+                                continueStatus = this.OnUnhandledDebugException(ref de);
                                 break;
                         }
 
