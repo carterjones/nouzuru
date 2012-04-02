@@ -6,7 +6,7 @@
     using System.Text;
     using Logger;
 
-    class DebugEventMonitor : Debugger
+    public class DebugEventMonitor : Debugger
     {
         #region Fields
 
