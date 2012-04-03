@@ -159,6 +159,136 @@
 
         #region Methods
 
+        #region Events
+
+        /// <summary>
+        /// Handles the CREATE_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_PROCESS_DEBUG_EVENT))
+            {
+                string imageName = Auxiliary.GetFileNameFromHandle(de.CreateProcessInfo.hFile);
+                uint pid = WinApi.GetProcessId(de.CreateProcessInfo.hProcess);
+                this.monitorLogger.Log("Process created: " + imageName + " (PID: " + pid + ")");
+            }
+
+            return base.OnCreateProcessDebugEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the CREATE_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
+            {
+                this.monitorLogger.Log("OnCreateThreadDebugEvent called.");
+            }
+
+            return base.OnCreateThreadDebugEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the EXIT_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
+            {
+                this.monitorLogger.Log("OnExitProcessDebugEvent called.");
+            }
+
+            return base.OnExitProcessDebugEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the EXIT_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
+            {
+                this.monitorLogger.Log("OnExitThreadDebugEvent called.");
+            }
+
+            return base.OnExitThreadDebugEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the LOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
+            {
+                string dllName = Auxiliary.GetFileNameFromHandle(de.LoadDll.hFile);
+                this.monitorLogger.Log("DLL loaded: " + dllName);
+            }
+
+            return base.OnLoadDllDebugEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the OUTPUT_DEBUG_STRING_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
+            {
+                this.monitorLogger.Log("OnOutputDebugStringEvent called.");
+            }
+
+            return base.OnOutputDebugStringEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the RIP_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
+            {
+                this.monitorLogger.Log("OnRipEvent called.");
+            }
+
+            return base.OnRipEvent(ref de);
+        }
+
+        /// <summary>
+        /// Handles the UNLOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
+        protected override WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
+        {
+            if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))
+            {
+                string dllName = Auxiliary.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
+                this.monitorLogger.Log("DLL unloaded: " + dllName);
+            }
+
+            return base.OnUnloadDllDebugEvent(ref de);
+        }
+
+        #endregion
+
+        #region Exceptions
+
         /// <summary>
         /// Logs information about an EXCEPTION_ACCESS_VIOLATION debug exception.
         /// </summary>
@@ -216,38 +346,6 @@
         }
 
         /// <summary>
-        /// Handles the CREATE_PROCESS_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_PROCESS_DEBUG_EVENT))
-            {
-                string imageName = Auxiliary.GetFileNameFromHandle(de.CreateProcessInfo.hFile);
-                uint pid = WinApi.GetProcessId(de.CreateProcessInfo.hProcess);
-                this.monitorLogger.Log("Process created: " + imageName + " (PID: " + pid + ")");
-            }
-
-            return base.OnCreateProcessDebugEvent(ref de);
-        }
-
-        /// <summary>
-        /// Handles the CREATE_THREAD_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
-            {
-                this.monitorLogger.Log("OnCreateThreadDebugEvent called.");
-            }
-
-            return base.OnCreateThreadDebugEvent(ref de);
-        }
-
-        /// <summary>
         /// Logs information about an EXCEPTION_DATATYPE_MISALIGNMENT debug exception.
         /// </summary>
         /// <param name="de">The debug exception that was caught by the debugger.</param>
@@ -260,36 +358,6 @@
             }
 
             return base.OnDatatypeMisalignmentDebugException(ref de);
-        }
-
-        /// <summary>
-        /// Handles the EXIT_PROCESS_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
-            {
-                this.monitorLogger.Log("OnExitProcessDebugEvent called.");
-            }
-
-            return base.OnExitProcessDebugEvent(ref de);
-        }
-
-        /// <summary>
-        /// Handles the EXIT_THREAD_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
-            {
-                this.monitorLogger.Log("OnExitThreadDebugEvent called.");
-            }
-
-            return base.OnExitThreadDebugEvent(ref de);
         }
 
         /// <summary>
@@ -488,22 +556,6 @@
         }
 
         /// <summary>
-        /// Handles the LOAD_DLL_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
-            {
-                string dllName = Auxiliary.GetFileNameFromHandle(de.LoadDll.hFile);
-                this.monitorLogger.Log("DLL loaded: " + dllName);
-            }
-
-            return base.OnLoadDllDebugEvent(ref de);
-        }
-
-        /// <summary>
         /// Logs information about an EXCEPTION_NONCONTINUABLE_EXCEPTION debug exception.
         /// </summary>
         /// <param name="de">The debug exception that was caught by the debugger.</param>
@@ -519,21 +571,6 @@
         }
 
         /// <summary>
-        /// Handles the OUTPUT_DEBUG_STRING_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
-            {
-                this.monitorLogger.Log("OnOutputDebugStringEvent called.");
-            }
-
-            return base.OnOutputDebugStringEvent(ref de);
-        }
-
-        /// <summary>
         /// Logs information about an EXCEPTION_PRIV_INSTRUCTION debug exception.
         /// </summary>
         /// <param name="de">The debug exception that was caught by the debugger.</param>
@@ -546,21 +583,6 @@
             }
 
             return base.OnPrivInstructionDebugException(ref de);
-        }
-
-        /// <summary>
-        /// Handles the RIP_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
-            {
-                this.monitorLogger.Log("OnRipEvent called.");
-            }
-
-            return base.OnRipEvent(ref de);
         }
 
         /// <summary>
@@ -593,21 +615,7 @@
             return base.OnStackOverflowDebugException(ref de);
         }
 
-        /// <summary>
-        /// Handles the UNLOAD_DLL_DEBUG_EVENT debug event.
-        /// </summary>
-        /// <param name="de">The debug event that was caught by the debugger.</param>
-        /// <returns>Returns the continue debugging status code.</returns>
-        protected override WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
-        {
-            if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))
-            {
-                string dllName = Auxiliary.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
-                this.monitorLogger.Log("DLL unloaded: " + dllName);
-            }
-
-            return base.OnUnloadDllDebugEvent(ref de);
-        }
+        #endregion
 
         #endregion
     }
