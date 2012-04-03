@@ -6,7 +6,7 @@
     using System.Text;
     using Logger;
 
-    public class DebugEventMonitor : Debugger
+    public class DebugMon : Debugger
     {
         #region Fields
 
@@ -57,7 +57,7 @@
 
         #region Constructors
 
-        public DebugEventMonitor(string filename)
+        public DebugMon(string filename)
         {
             this.monitorLogger = new Logger(Logger.Type.FILE | Logger.Type.CONSOLE, Logger.Level.NONE, filename);
         }
