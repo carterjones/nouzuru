@@ -10,46 +10,46 @@
     {
         #region Fields
 
-        public const DebugEventTypeFilter AllEvents =
-            DebugEventTypeFilter.EXCEPTION_DEBUG_EVENT |
-            DebugEventTypeFilter.CREATE_THREAD_DEBUG_EVENT |
-            DebugEventTypeFilter.CREATE_PROCESS_DEBUG_EVENT |
-            DebugEventTypeFilter.EXIT_THREAD_DEBUG_EVENT |
-            DebugEventTypeFilter.EXIT_PROCESS_DEBUG_EVENT |
-            DebugEventTypeFilter.LOAD_DLL_DEBUG_EVENT |
-            DebugEventTypeFilter.UNLOAD_DLL_DEBUG_EVENT |
-            DebugEventTypeFilter.OUTPUT_DEBUG_STRING_EVENT |
-            DebugEventTypeFilter.RIP_EVENT;
+        public const EventFilter AllEvents =
+            EventFilter.EXCEPTION_DEBUG_EVENT |
+            EventFilter.CREATE_THREAD_DEBUG_EVENT |
+            EventFilter.CREATE_PROCESS_DEBUG_EVENT |
+            EventFilter.EXIT_THREAD_DEBUG_EVENT |
+            EventFilter.EXIT_PROCESS_DEBUG_EVENT |
+            EventFilter.LOAD_DLL_DEBUG_EVENT |
+            EventFilter.UNLOAD_DLL_DEBUG_EVENT |
+            EventFilter.OUTPUT_DEBUG_STRING_EVENT |
+            EventFilter.RIP_EVENT;
 
-        public const DebugExceptionTypeFilter AllExceptions =
-            DebugExceptionTypeFilter.GUARD_PAGE |
-            DebugExceptionTypeFilter.DATATYPE_MISALIGNMENT |
-            DebugExceptionTypeFilter.BREAKPOINT |
-            DebugExceptionTypeFilter.SINGLE_STEP |
-            DebugExceptionTypeFilter.INVALID_HANDLE |
-            DebugExceptionTypeFilter.ACCESS_VIOLATION |
-            DebugExceptionTypeFilter.IN_PAGE_ERROR |
-            DebugExceptionTypeFilter.ILLEGAL_INSTRUCTION |
-            DebugExceptionTypeFilter.NONCONTINUABLE_EXCEPTION |
-            DebugExceptionTypeFilter.INVALID_DISPOSITION |
-            DebugExceptionTypeFilter.ARRAY_BOUNDS_EXCEEDED |
-            DebugExceptionTypeFilter.FLT_DENORMAL_OPERAND |
-            DebugExceptionTypeFilter.FLT_DIVIDE_BY_ZERO |
-            DebugExceptionTypeFilter.FLT_INEXACT_RESULT |
-            DebugExceptionTypeFilter.FLT_INVALID_OPERATION |
-            DebugExceptionTypeFilter.FLT_OVERFLOW |
-            DebugExceptionTypeFilter.FLT_STACK_CHECK |
-            DebugExceptionTypeFilter.FLT_UNDERFLOW |
-            DebugExceptionTypeFilter.INT_DIVIDE_BY_ZERO |
-            DebugExceptionTypeFilter.INT_OVERFLOW |
-            DebugExceptionTypeFilter.PRIV_INSTRUCTION |
-            DebugExceptionTypeFilter.STACK_OVERFLOW;
+        public const ExceptionFilter AllExceptions =
+            ExceptionFilter.GUARD_PAGE |
+            ExceptionFilter.DATATYPE_MISALIGNMENT |
+            ExceptionFilter.BREAKPOINT |
+            ExceptionFilter.SINGLE_STEP |
+            ExceptionFilter.INVALID_HANDLE |
+            ExceptionFilter.ACCESS_VIOLATION |
+            ExceptionFilter.IN_PAGE_ERROR |
+            ExceptionFilter.ILLEGAL_INSTRUCTION |
+            ExceptionFilter.NONCONTINUABLE_EXCEPTION |
+            ExceptionFilter.INVALID_DISPOSITION |
+            ExceptionFilter.ARRAY_BOUNDS_EXCEEDED |
+            ExceptionFilter.FLT_DENORMAL_OPERAND |
+            ExceptionFilter.FLT_DIVIDE_BY_ZERO |
+            ExceptionFilter.FLT_INEXACT_RESULT |
+            ExceptionFilter.FLT_INVALID_OPERATION |
+            ExceptionFilter.FLT_OVERFLOW |
+            ExceptionFilter.FLT_STACK_CHECK |
+            ExceptionFilter.FLT_UNDERFLOW |
+            ExceptionFilter.INT_DIVIDE_BY_ZERO |
+            ExceptionFilter.INT_OVERFLOW |
+            ExceptionFilter.PRIV_INSTRUCTION |
+            ExceptionFilter.STACK_OVERFLOW;
 
-        public const DebugExceptionTypeFilter ExploitableExceptions =
-            DebugExceptionTypeFilter.GUARD_PAGE |
-            DebugExceptionTypeFilter.ACCESS_VIOLATION |
-            DebugExceptionTypeFilter.INT_OVERFLOW |
-            DebugExceptionTypeFilter.STACK_OVERFLOW;
+        public const ExceptionFilter ExploitableExceptions =
+            ExceptionFilter.GUARD_PAGE |
+            ExceptionFilter.ACCESS_VIOLATION |
+            ExceptionFilter.INT_OVERFLOW |
+            ExceptionFilter.STACK_OVERFLOW;
 
         private Logger monitorLogger;
 
@@ -67,7 +67,7 @@
         #region Enumerations
 
         [Flags]
-        public enum DebugEventTypeFilter : uint
+        public enum EventFilter : uint
         {
             EXCEPTION_DEBUG_EVENT = 0x0001,
             CREATE_THREAD_DEBUG_EVENT = 0x0002,
@@ -81,7 +81,7 @@
         }
 
         [Flags]
-        public enum DebugExceptionTypeFilter : ulong
+        public enum ExceptionFilter : ulong
         {
             GUARD_PAGE = 0x00000001,
             DATATYPE_MISALIGNMENT = 0x00000002,
@@ -111,9 +111,9 @@
 
         #region Properties
 
-        public DebugEventTypeFilter EventFilter { get; set; }
+        public EventFilter EventsMonitored { get; set; }
 
-        public DebugExceptionTypeFilter ExceptionFilter { get; set; }
+        public ExceptionFilter ExceptionsMonitored { get; set; }
 
         public bool InitialBreakpointHit { get; private set; }
 
@@ -123,7 +123,7 @@
 
         protected override WinApi.DbgCode OnAccessViolationDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.ACCESS_VIOLATION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ACCESS_VIOLATION))
             {
                 this.monitorLogger.Log("OnAccessViolationDebugException called.");
             }
@@ -133,7 +133,7 @@
 
         protected override WinApi.DbgCode OnArrayBoundsExceededDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.ARRAY_BOUNDS_EXCEEDED))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ARRAY_BOUNDS_EXCEEDED))
             {
                 this.monitorLogger.Log("OnArrayBoundsExceededDebugException called.");
             }
@@ -146,14 +146,14 @@
             if (!this.InitialBreakpointHit)
             {
                 this.InitialBreakpointHit = true;
-                if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.BREAKPOINT))
+                if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.BREAKPOINT))
                 {
                     this.monitorLogger.Log("Initial breakpoint hit.");
                 }
             }
             else
             {
-                if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.BREAKPOINT))
+                if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.BREAKPOINT))
                 {
                     this.monitorLogger.Log("Breakpoint hit at: " + de.Exception.ExceptionRecord.ExceptionAddress);
                 }
@@ -164,7 +164,7 @@
 
         protected override WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.CREATE_PROCESS_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_PROCESS_DEBUG_EVENT))
             {
                 string imageName = Auxiliary.GetFileNameFromHandle(de.CreateProcessInfo.hFile);
                 uint pid = WinApi.GetProcessId(de.CreateProcessInfo.hProcess);
@@ -176,7 +176,7 @@
 
         protected override WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.CREATE_THREAD_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
             {
                 this.monitorLogger.Log("OnCreateThreadDebugEvent called.");
             }
@@ -186,7 +186,7 @@
 
         protected override WinApi.DbgCode OnDatatypeMisalignmentDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.DATATYPE_MISALIGNMENT))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.DATATYPE_MISALIGNMENT))
             {
                 this.monitorLogger.Log("OnDatatypeMisalignmentDebugException called.");
             }
@@ -196,7 +196,7 @@
 
         protected override WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.EXIT_PROCESS_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
             {
                 this.monitorLogger.Log("OnExitProcessDebugEvent called.");
             }
@@ -206,7 +206,7 @@
 
         protected override WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.EXIT_THREAD_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
             {
                 this.monitorLogger.Log("OnExitThreadDebugEvent called.");
             }
@@ -216,7 +216,7 @@
 
         protected override WinApi.DbgCode OnFltDenormalOperandDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_DENORMAL_OPERAND))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DENORMAL_OPERAND))
             {
                 this.monitorLogger.Log("OnFltDenormalOperandDebugException called.");
             }
@@ -226,7 +226,7 @@
 
         protected override WinApi.DbgCode OnFltDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_DIVIDE_BY_ZERO))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DIVIDE_BY_ZERO))
             {
                 this.monitorLogger.Log("OnFltDivideByZeroDebugException called.");
             }
@@ -236,7 +236,7 @@
 
         protected override WinApi.DbgCode OnFltInexactResultDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_INEXACT_RESULT))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INEXACT_RESULT))
             {
                 this.monitorLogger.Log("OnFltInexactResultDebugException called.");
             }
@@ -246,7 +246,7 @@
 
         protected override WinApi.DbgCode OnFltInvalidOperationDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_INVALID_OPERATION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INVALID_OPERATION))
             {
                 this.monitorLogger.Log("OnFltInvalidOperationDebugException called.");
             }
@@ -256,7 +256,7 @@
 
         protected override WinApi.DbgCode OnFltOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_OVERFLOW))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_OVERFLOW))
             {
                 this.monitorLogger.Log("OnFltOverflowDebugException called.");
             }
@@ -266,7 +266,7 @@
 
         protected override WinApi.DbgCode OnFltStackCheckDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_STACK_CHECK))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_STACK_CHECK))
             {
                 this.monitorLogger.Log("OnFltStackCheckDebugException called.");
             }
@@ -276,7 +276,7 @@
 
         protected override WinApi.DbgCode OnFltUnderflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.FLT_UNDERFLOW))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_UNDERFLOW))
             {
                 this.monitorLogger.Log("OnFltUnderflowDebugException called.");
             }
@@ -286,7 +286,7 @@
 
         protected override WinApi.DbgCode OnGuardPageDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.GUARD_PAGE))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.GUARD_PAGE))
             {
                 this.monitorLogger.Log("OnGuardPageDebugException called.");
             }
@@ -296,7 +296,7 @@
 
         protected override WinApi.DbgCode OnIllegalInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.ILLEGAL_INSTRUCTION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ILLEGAL_INSTRUCTION))
             {
                 this.monitorLogger.Log("OnIllegalInstructionDebugException called.");
             }
@@ -306,7 +306,7 @@
 
         protected override WinApi.DbgCode OnInPageErrorDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.IN_PAGE_ERROR))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.IN_PAGE_ERROR))
             {
                 this.monitorLogger.Log("OnInPageErrorDebugException called.");
             }
@@ -316,7 +316,7 @@
 
         protected override WinApi.DbgCode OnIntDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.INT_DIVIDE_BY_ZERO))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_DIVIDE_BY_ZERO))
             {
                 this.monitorLogger.Log("OnIntDivideByZeroDebugException called.");
             }
@@ -326,7 +326,7 @@
 
         protected override WinApi.DbgCode OnIntOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.INT_OVERFLOW))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_OVERFLOW))
             {
                 this.monitorLogger.Log("OnIntOverflowDebugException called.");
             }
@@ -336,7 +336,7 @@
 
         protected override WinApi.DbgCode OnInvalidDispositionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.INVALID_DISPOSITION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INVALID_DISPOSITION))
             {
                 this.monitorLogger.Log("OnInvalidDispositionDebugException called.");
             }
@@ -346,7 +346,7 @@
 
         protected override WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.LOAD_DLL_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
             {
                 string dllName = Auxiliary.GetFileNameFromHandle(de.LoadDll.hFile);
                 this.monitorLogger.Log("DLL loaded: " + dllName);
@@ -357,7 +357,7 @@
 
         protected override WinApi.DbgCode OnNoncontinuableExceptionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.NONCONTINUABLE_EXCEPTION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.NONCONTINUABLE_EXCEPTION))
             {
                 this.monitorLogger.Log("OnNoncontinuableExceptionDebugException called.");
             }
@@ -367,7 +367,7 @@
 
         protected override WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.OUTPUT_DEBUG_STRING_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
             {
                 this.monitorLogger.Log("OnOutputDebugStringEvent called.");
             }
@@ -377,7 +377,7 @@
 
         protected override WinApi.DbgCode OnPrivInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.PRIV_INSTRUCTION))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.PRIV_INSTRUCTION))
             {
                 this.monitorLogger.Log("OnPrivInstructionDebugException called.");
             }
@@ -387,7 +387,7 @@
 
         protected override WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.RIP_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
             {
                 this.monitorLogger.Log("OnRipEvent called.");
             }
@@ -397,7 +397,7 @@
 
         protected override WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.SINGLE_STEP))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.SINGLE_STEP))
             {
                 this.monitorLogger.Log("OnSingleStepDebugException called.");
             }
@@ -407,7 +407,7 @@
 
         protected override WinApi.DbgCode OnStackOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.ExceptionFilter.HasFlag(DebugExceptionTypeFilter.STACK_OVERFLOW))
+            if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.STACK_OVERFLOW))
             {
                 this.monitorLogger.Log("OnStackOverflowDebugException called.");
             }
@@ -417,7 +417,7 @@
 
         protected override WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
-            if (this.EventFilter.HasFlag(DebugEventTypeFilter.UNLOAD_DLL_DEBUG_EVENT))
+            if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))
             {
                 string dllName = Auxiliary.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
                 this.monitorLogger.Log("DLL unloaded: " + dllName);
