@@ -2,14 +2,22 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Text;
     using Logger;
 
+    /// <summary>
+    /// A class that logs each possible debug event and debug exception, attempting to provide detailed data about the
+    /// most useful and relevant information for each handled event and exception.
+    /// </summary>
     public class DebugMon : Debugger
     {
         #region Fields
 
+        /// <summary>
+        /// An event filter that will log all debug events.
+        /// </summary>
         public const EventFilter AllEvents =
             EventFilter.EXCEPTION_DEBUG_EVENT |
             EventFilter.CREATE_THREAD_DEBUG_EVENT |
@@ -21,6 +29,9 @@
             EventFilter.OUTPUT_DEBUG_STRING_EVENT |
             EventFilter.RIP_EVENT;
 
+        /// <summary>
+        /// An exception filter that will log all debug exceptions.
+        /// </summary>
         public const ExceptionFilter AllExceptions =
             ExceptionFilter.GUARD_PAGE |
             ExceptionFilter.DATATYPE_MISALIGNMENT |
@@ -45,18 +56,28 @@
             ExceptionFilter.PRIV_INSTRUCTION |
             ExceptionFilter.STACK_OVERFLOW;
 
+        /// <summary>
+        /// An exception filter that will log all (potentially) exploitable debug exceptions.
+        /// </summary>
         public const ExceptionFilter ExploitableExceptions =
             ExceptionFilter.GUARD_PAGE |
             ExceptionFilter.ACCESS_VIOLATION |
             ExceptionFilter.INT_OVERFLOW |
             ExceptionFilter.STACK_OVERFLOW;
 
+        /// <summary>
+        /// All event and exception handlers in DebugMon send log entries to this logger.
+        /// </summary>
         private Logger monitorLogger;
 
         #endregion
 
         #region Constructors
 
+        /// <summary>
+        /// Initializes a new instance of the DebugMon class.
+        /// </summary>
+        /// <param name="filename">The name of the file that will log all of the monitor's results.</param>
         public DebugMon(string filename)
         {
             this.monitorLogger = new Logger(Logger.Type.FILE | Logger.Type.CONSOLE, Logger.Level.NONE, filename);
@@ -66,6 +87,10 @@
 
         #region Enumerations
 
+        /// <summary>
+        /// A collection of flags that correspond to debug events. These are used in filtering log entries.
+        /// </summary>
+        [SuppressMessage("Microsoft.StyleCop.CSharp.DocumentationRules", "*", Justification = "Documented by MSFT")]
         [Flags]
         public enum EventFilter : uint
         {
@@ -80,6 +105,10 @@
             RIP_EVENT = 0x0100
         }
 
+        /// <summary>
+        /// A collection of flags that correspond to debug exceptions. These are used in filtering log entries.
+        /// </summary>
+        [SuppressMessage("Microsoft.StyleCop.CSharp.DocumentationRules", "*", Justification = "Documented by MSFT")]
         [Flags]
         public enum ExceptionFilter : ulong
         {
@@ -111,16 +140,30 @@
 
         #region Properties
 
+        /// <summary>
+        /// Gets or sets a value that determines which debug events will be monitored.
+        /// </summary>
         public EventFilter EventsMonitored { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value that determines which debug exceptions will be monitored.
+        /// </summary>
         public ExceptionFilter ExceptionsMonitored { get; set; }
 
+        /// <summary>
+        /// Gets a value indicating whether the initial breakpoint has been encountered by the debugger.
+        /// </summary>
         public bool InitialBreakpointHit { get; private set; }
 
         #endregion
 
         #region Methods
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_ACCESS_VIOLATION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnAccessViolationDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ACCESS_VIOLATION))
@@ -131,6 +174,11 @@
             return base.OnAccessViolationDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_ARRAY_BOUNDS_EXCEEDED debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnArrayBoundsExceededDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ARRAY_BOUNDS_EXCEEDED))
@@ -141,6 +189,11 @@
             return base.OnArrayBoundsExceededDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_BREAKPOINT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (!this.InitialBreakpointHit)
@@ -162,6 +215,11 @@
             return base.OnBreakpointDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the CREATE_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnCreateProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.CREATE_PROCESS_DEBUG_EVENT))
@@ -174,6 +232,11 @@
             return base.OnCreateProcessDebugEvent(ref de);
         }
 
+        /// <summary>
+        /// Handles the CREATE_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnCreateThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
@@ -184,6 +247,11 @@
             return base.OnCreateThreadDebugEvent(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_DATATYPE_MISALIGNMENT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnDatatypeMisalignmentDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.DATATYPE_MISALIGNMENT))
@@ -194,6 +262,11 @@
             return base.OnDatatypeMisalignmentDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the EXIT_PROCESS_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnExitProcessDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
@@ -204,6 +277,11 @@
             return base.OnExitProcessDebugEvent(ref de);
         }
 
+        /// <summary>
+        /// Handles the EXIT_THREAD_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnExitThreadDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
@@ -214,6 +292,11 @@
             return base.OnExitThreadDebugEvent(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_DENORMAL_OPERAND debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltDenormalOperandDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DENORMAL_OPERAND))
@@ -224,6 +307,11 @@
             return base.OnFltDenormalOperandDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_DIVIDE_BY_ZERO debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DIVIDE_BY_ZERO))
@@ -234,6 +322,11 @@
             return base.OnFltDivideByZeroDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_INEXACT_RESULT debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltInexactResultDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INEXACT_RESULT))
@@ -244,6 +337,11 @@
             return base.OnFltInexactResultDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_INVALID_OPERATION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltInvalidOperationDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INVALID_OPERATION))
@@ -254,6 +352,11 @@
             return base.OnFltInvalidOperationDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_OVERFLOW))
@@ -264,6 +367,11 @@
             return base.OnFltOverflowDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_STACK_CHECK debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltStackCheckDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_STACK_CHECK))
@@ -274,6 +382,11 @@
             return base.OnFltStackCheckDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_FLT_UNDERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnFltUnderflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_UNDERFLOW))
@@ -284,6 +397,11 @@
             return base.OnFltUnderflowDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_GUARD_PAGE debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnGuardPageDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.GUARD_PAGE))
@@ -294,6 +412,11 @@
             return base.OnGuardPageDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_ILLEGAL_INSTRUCTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnIllegalInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ILLEGAL_INSTRUCTION))
@@ -304,6 +427,11 @@
             return base.OnIllegalInstructionDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_IN_PAGE_ERROR debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnInPageErrorDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.IN_PAGE_ERROR))
@@ -314,6 +442,11 @@
             return base.OnInPageErrorDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_INT_DIVIDE_BY_ZERO debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnIntDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_DIVIDE_BY_ZERO))
@@ -324,6 +457,11 @@
             return base.OnIntDivideByZeroDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_INT_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnIntOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_OVERFLOW))
@@ -334,6 +472,11 @@
             return base.OnIntOverflowDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_INVALID_DISPOSITION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnInvalidDispositionDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INVALID_DISPOSITION))
@@ -344,6 +487,11 @@
             return base.OnInvalidDispositionDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the LOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnLoadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
@@ -355,6 +503,11 @@
             return base.OnLoadDllDebugEvent(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_NONCONTINUABLE_EXCEPTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnNoncontinuableExceptionDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.NONCONTINUABLE_EXCEPTION))
@@ -365,6 +518,11 @@
             return base.OnNoncontinuableExceptionDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the OUTPUT_DEBUG_STRING_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnOutputDebugStringEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
@@ -375,6 +533,11 @@
             return base.OnOutputDebugStringEvent(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_PRIV_INSTRUCTION debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnPrivInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.PRIV_INSTRUCTION))
@@ -385,6 +548,11 @@
             return base.OnPrivInstructionDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the RIP_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnRipEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
@@ -395,6 +563,11 @@
             return base.OnRipEvent(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_SINGLE_STEP debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.SINGLE_STEP))
@@ -405,6 +578,11 @@
             return base.OnSingleStepDebugException(ref de);
         }
 
+        /// <summary>
+        /// Logs information about an EXCEPTION_STACK_OVERFLOW debug exception.
+        /// </summary>
+        /// <param name="de">The debug exception that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnStackOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.STACK_OVERFLOW))
@@ -415,6 +593,11 @@
             return base.OnStackOverflowDebugException(ref de);
         }
 
+        /// <summary>
+        /// Handles the UNLOAD_DLL_DEBUG_EVENT debug event.
+        /// </summary>
+        /// <param name="de">The debug event that was caught by the debugger.</param>
+        /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnUnloadDllDebugEvent(ref WinApi.DEBUG_EVENT de)
         {
             if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))

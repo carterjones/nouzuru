@@ -59,7 +59,12 @@
             return "Empty filemap handle.";
         }
 
-        public static string GetFileNameFromHModule(IntPtr hModule)
+        /// <summary>
+        /// Gets the name of the file referenced by the supplied hModule.
+        /// </summary>
+        /// <param name="moduleHandle">The hModule.</param>
+        /// <returns>Returns the full path to the file.</returns>
+        public static string GetFileNameFromHModule(IntPtr moduleHandle)
         {
             StringBuilder filename = new StringBuilder(255);
             WinApi.GetModuleFileName(IntPtr.Zero, filename, filename.Capacity);
