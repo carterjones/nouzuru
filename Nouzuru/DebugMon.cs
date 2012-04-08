@@ -5,8 +5,8 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Text;
-    using Logger;
     using Distorm3cs;
+    using Logger;
 
     /// <summary>
     /// A class that logs each possible debug event and debug exception, attempting to provide detailed data about the
@@ -316,8 +316,10 @@
                 IntPtr exceptionAddress = de.Exception.ExceptionRecord.ExceptionAddress;
                 string inst = this.DisassembleInstructionAtAddress(exceptionAddress);
                 string message =
-                    "Access violation at " + this.IntPtrToFormattedAddress(exceptionAddress) + " - " + inst;
+                    "An access violation occurred at " +
+                    this.IntPtrToFormattedAddress(exceptionAddress) + " - " + inst;
                 this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
+                this.LogExceptionRecord(de.Exception.ExceptionRecord);
             }
 
             return base.OnAccessViolationDebugException(ref de);
@@ -332,7 +334,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ARRAY_BOUNDS_EXCEEDED))
             {
-                this.monitorLogger.Log("OnArrayBoundsExceededDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnArrayBoundsExceededDebugException(ref de);
@@ -373,7 +375,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.DATATYPE_MISALIGNMENT))
             {
-                this.monitorLogger.Log("OnDatatypeMisalignmentDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnDatatypeMisalignmentDebugException(ref de);
@@ -388,7 +390,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DENORMAL_OPERAND))
             {
-                this.monitorLogger.Log("OnFltDenormalOperandDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltDenormalOperandDebugException(ref de);
@@ -403,7 +405,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DIVIDE_BY_ZERO))
             {
-                this.monitorLogger.Log("OnFltDivideByZeroDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltDivideByZeroDebugException(ref de);
@@ -418,7 +420,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INEXACT_RESULT))
             {
-                this.monitorLogger.Log("OnFltInexactResultDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltInexactResultDebugException(ref de);
@@ -433,7 +435,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INVALID_OPERATION))
             {
-                this.monitorLogger.Log("OnFltInvalidOperationDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltInvalidOperationDebugException(ref de);
@@ -448,7 +450,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_OVERFLOW))
             {
-                this.monitorLogger.Log("OnFltOverflowDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltOverflowDebugException(ref de);
@@ -463,7 +465,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_STACK_CHECK))
             {
-                this.monitorLogger.Log("OnFltStackCheckDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltStackCheckDebugException(ref de);
@@ -478,7 +480,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_UNDERFLOW))
             {
-                this.monitorLogger.Log("OnFltUnderflowDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnFltUnderflowDebugException(ref de);
@@ -493,7 +495,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.GUARD_PAGE))
             {
-                this.monitorLogger.Log("OnGuardPageDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnGuardPageDebugException(ref de);
@@ -508,7 +510,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ILLEGAL_INSTRUCTION))
             {
-                this.monitorLogger.Log("OnIllegalInstructionDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnIllegalInstructionDebugException(ref de);
@@ -523,7 +525,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.IN_PAGE_ERROR))
             {
-                this.monitorLogger.Log("OnInPageErrorDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnInPageErrorDebugException(ref de);
@@ -538,7 +540,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_DIVIDE_BY_ZERO))
             {
-                this.monitorLogger.Log("OnIntDivideByZeroDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnIntDivideByZeroDebugException(ref de);
@@ -553,7 +555,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_OVERFLOW))
             {
-                this.monitorLogger.Log("OnIntOverflowDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnIntOverflowDebugException(ref de);
@@ -568,7 +570,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INVALID_DISPOSITION))
             {
-                this.monitorLogger.Log("OnInvalidDispositionDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnInvalidDispositionDebugException(ref de);
@@ -583,7 +585,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.NONCONTINUABLE_EXCEPTION))
             {
-                this.monitorLogger.Log("OnNoncontinuableExceptionDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnNoncontinuableExceptionDebugException(ref de);
@@ -598,7 +600,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.PRIV_INSTRUCTION))
             {
-                this.monitorLogger.Log("OnPrivInstructionDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnPrivInstructionDebugException(ref de);
@@ -613,7 +615,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.SINGLE_STEP))
             {
-                this.monitorLogger.Log("OnSingleStepDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnSingleStepDebugException(ref de);
@@ -628,7 +630,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.STACK_OVERFLOW))
             {
-                this.monitorLogger.Log("OnStackOverflowDebugException called. (" + this.InstanceIdentifier + ")");
+                this.LogGenericException(ref de);
             }
 
             return base.OnStackOverflowDebugException(ref de);
@@ -636,6 +638,13 @@
 
         #endregion
 
+        /// <summary>
+        /// Takes a message and adds the instance identifier, if one exists.
+        /// </summary>
+        /// <param name="message">The message on which an instance identifier may be applied.</param>
+        /// <returns>
+        /// Returns the message with the appended instance identifier, if an identifier has been defiened.
+        /// </returns>
         private string AppendInstanceIdentifier(string message)
         {
             if (!string.IsNullOrEmpty(this.InstanceIdentifier))
@@ -648,6 +657,11 @@
             }
         }
 
+        /// <summary>
+        /// Disassembles the instruction that occurs at the specified address.
+        /// </summary>
+        /// <param name="address">The address where the instruction to be disassembled resides.</param>
+        /// <returns>Returns the disassembled instruction.</returns>
         private string DisassembleInstructionAtAddress(IntPtr address)
         {
             byte[] instData = new byte[16];
@@ -678,6 +692,82 @@
             }
 
             return insts[0];
+        }
+
+        /// <summary>
+        /// Attempt to identify the exception code and return a string representation of that code.
+        /// </summary>
+        /// <param name="exceptionCode">The exception code as an unsigned integer.</param>
+        /// <returns>
+        /// On success, returns the exception code as a string. On failure, returns "UNKNOWN_EXCEPTION".
+        /// </returns>
+        private string ExceptionCodeToString(uint exceptionCode)
+        {
+            Array values = Enum.GetValues(typeof(WinApi.ExceptionType));
+            foreach (var value in values)
+            {
+                if ((uint)value == exceptionCode)
+                {
+                    return ((WinApi.ExceptionType)exceptionCode).ToString();
+                }
+            }
+
+            return "UNKNOWN_EXCEPTION";
+        }
+
+        /// <summary>
+        /// Attempts to identify the exception code and return a properly capitalized string representation of that
+        /// code.
+        /// </summary>
+        /// <param name="exceptionCode">The exception code as an unsigned integer.</param>
+        /// <returns>
+        /// On success, returns the exception code as a string. On failure, returns "Unknown Exception".
+        /// </returns>
+        private string ExceptionCodeToPrettyString(uint exceptionCode)
+        {
+            string code = this.ExceptionCodeToString(exceptionCode).ToLower();
+            string[] parts =
+                code.Split('_').Select(x => x[0].ToString().ToUpper() + new string(x.Skip(1).ToArray())).ToArray();
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>
+        /// Log each piece of information available from an exception record.
+        /// </summary>
+        /// <param name="er">The exception record to be logged.</param>
+#if WIN64
+        private void LogExceptionRecord(WinApi.EXCEPTION_RECORD64 er)
+#else
+        private void LogExceptionRecord(WinApi.EXCEPTION_RECORD32 er)
+#endif
+        {
+            this.monitorLogger.Log("ExceptionAddress: " + this.IntPtrToFormattedAddress(er.ExceptionAddress));
+            string code =
+                er.ExceptionCode.ToString("x").PadLeft(8, '0') +
+                " (" + this.ExceptionCodeToString(er.ExceptionCode) + ")";
+            this.monitorLogger.Log("ExceptionCode:    0x" + code);
+            this.monitorLogger.Log("ExceptionFlags:   0x" + er.ExceptionFlags.ToString("x").PadLeft(8, '0'));
+            this.monitorLogger.Log("ExceptionRecord:  " + this.IntPtrToFormattedAddress(er.ExceptionRecord));
+            this.monitorLogger.Log("NumberParameters: " + er.NumberParameters);
+            this.monitorLogger.Log("ExceptionInformation:");
+            for (int i = 0; i < er.ExceptionInformation.Length; ++i)
+            {
+                string counter = "  " + i.ToString().PadLeft(2, '0');
+                string info = " - 0x" + er.ExceptionInformation[i].ToString("x").PadLeft(8, '0');
+                this.monitorLogger.Log(counter + info);
+            }
+        }
+
+        /// <summary>
+        /// Logs generic information about an exception.
+        /// </summary>
+        /// <param name="de">The debug event that contains the exception that was thrown.</param>
+        private void LogGenericException(ref WinApi.DEBUG_EVENT de)
+        {
+            this.monitorLogger.Log(this.AppendInstanceIdentifier(
+                "An exception occurred: " +
+                this.ExceptionCodeToPrettyString(de.Exception.ExceptionRecord.ExceptionCode)));
+            this.LogExceptionRecord(de.Exception.ExceptionRecord);
         }
 
         #endregion
