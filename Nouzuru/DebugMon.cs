@@ -177,9 +177,9 @@
             if (this.EventsMonitored.HasFlag(EventFilter.CREATE_PROCESS_DEBUG_EVENT))
             {
                 string imageName = Auxiliary.GetFileNameFromHandle(de.CreateProcessInfo.hFile);
-                uint pid = WinApi.GetProcessId(de.CreateProcessInfo.hProcess);
-                this.monitorLogger.Log(
-                    "Process created: " + imageName + " (PID: " + pid + ") (" + this.InstanceIdentifier + ")");
+                uint pid = de.dwProcessId;
+                string message = "Process created: " + imageName + " (PID: " + pid + ")";
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnCreateProcessDebugEvent(ref de);
@@ -194,7 +194,8 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnCreateThreadDebugEvent called. (" + this.InstanceIdentifier + ")");
+                string message = "Thread " + de.dwThreadId + " has been created.";
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnCreateThreadDebugEvent(ref de);
@@ -209,7 +210,9 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnExitProcessDebugEvent called. (" + this.InstanceIdentifier + ")");
+                string message =
+                    "Process exited with code " + de.ExitProcess.dwExitCode + ". (PID: " + de.dwProcessId + ")";
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnExitProcessDebugEvent(ref de);
@@ -224,7 +227,8 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnExitThreadDebugEvent called. (" + this.InstanceIdentifier + ")");
+                string message = "Thread " + de.dwThreadId + " has exited.";
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnExitThreadDebugEvent(ref de);
@@ -240,7 +244,8 @@
             if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
             {
                 string dllName = Auxiliary.GetFileNameFromHandle(de.LoadDll.hFile);
-                this.monitorLogger.Log("DLL loaded: " + dllName + " (" + this.InstanceIdentifier + ")");
+                string message = "DLL loaded: " + dllName;
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnLoadDllDebugEvent(ref de);
@@ -285,8 +290,10 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))
             {
-                string dllName = Auxiliary.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
-                this.monitorLogger.Log("DLL unloaded: " + dllName + " (" + this.InstanceIdentifier + ")");
+                // TODO: Fix the name resolution function that is used when logging DLL unload events.
+                string dllName = this.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
+                string message = "DLL unloaded: " + dllName;
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnUnloadDllDebugEvent(ref de);
@@ -623,6 +630,18 @@
         }
 
         #endregion
+
+        private string AppendInstanceIdentifier(string message)
+        {
+            if (!string.IsNullOrEmpty(this.InstanceIdentifier))
+            {
+                return message + " (" + this.InstanceIdentifier + ")";
+            }
+            else
+            {
+                return message;
+            }
+        }
 
         #endregion
     }
