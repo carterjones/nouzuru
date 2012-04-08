@@ -319,6 +319,7 @@
                     "An access violation occurred at " +
                     this.IntPtrToFormattedAddress(exceptionAddress) + " - " + inst;
                 this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
+                this.LogRegisters(ref de);
                 this.LogExceptionRecord(de.Exception.ExceptionRecord);
             }
 
@@ -767,7 +768,53 @@
             this.monitorLogger.Log(this.AppendInstanceIdentifier(
                 "An exception occurred: " +
                 this.ExceptionCodeToPrettyString(de.Exception.ExceptionRecord.ExceptionCode)));
+            this.LogRegisters(ref de);
             this.LogExceptionRecord(de.Exception.ExceptionRecord);
+        }
+
+        /// <summary>
+        /// Logs the registers at the time the debug event was caught.
+        /// </summary>
+        /// <param name="de">The debug event that was caught.</param>
+        private void LogRegisters(ref WinApi.DEBUG_EVENT de)
+        {
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            this.BeginEditThread(de.dwThreadId, out threadHandle, out cx);
+
+#if WIN64
+            this.monitorLogger.Log(
+                "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
+                "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
+                "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
+                "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
+                "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
+                "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
+            this.monitorLogger.Log(
+                "dr0:" + cx.Dr0.ToString("X").PadLeft(16, '0') +
+                "dr1:" + cx.Dr1.ToString("X").PadLeft(16, '0') +
+                "dr2:" + cx.Dr2.ToString("X").PadLeft(16, '0') +
+                "dr3:" + cx.Dr3.ToString("X").PadLeft(16, '0') +
+                "dr6:" + cx.Dr6.ToString("X").PadLeft(16, '0') +
+                "dr7:" + cx.Dr7.ToString("X").PadLeft(16, '0'));
+#else
+            this.monitorLogger.Log(
+                "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
+                " ebx:" + cx.Ebx.ToString("X").PadLeft(8, '0') +
+                " ecx:" + cx.Ecx.ToString("X").PadLeft(8, '0') +
+                " edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
+                " eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
+                " ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
+            this.monitorLogger.Log(
+                "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
+                " dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
+                " dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
+                " dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
+                " dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
+                " dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
+#endif
+
+            this.EndEditThread(ref threadHandle, ref cx);
         }
 
         #endregion
