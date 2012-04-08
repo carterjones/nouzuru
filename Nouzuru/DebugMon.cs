@@ -155,6 +155,12 @@
         /// </summary>
         public bool InitialBreakpointHit { get; private set; }
 
+        /// <summary>
+        /// Gets or sets an identifier that is appended to log entriess. This can be used to identify which instance
+        /// of a debugger caused an event or exception.
+        /// </summary>
+        public string InstanceIdentifier { get; set; }
+
         #endregion
 
         #region Methods
@@ -172,7 +178,8 @@
             {
                 string imageName = Auxiliary.GetFileNameFromHandle(de.CreateProcessInfo.hFile);
                 uint pid = WinApi.GetProcessId(de.CreateProcessInfo.hProcess);
-                this.monitorLogger.Log("Process created: " + imageName + " (PID: " + pid + ")");
+                this.monitorLogger.Log(
+                    "Process created: " + imageName + " (PID: " + pid + ") (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnCreateProcessDebugEvent(ref de);
@@ -187,7 +194,7 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.CREATE_THREAD_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnCreateThreadDebugEvent called.");
+                this.monitorLogger.Log("OnCreateThreadDebugEvent called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnCreateThreadDebugEvent(ref de);
@@ -202,7 +209,7 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_PROCESS_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnExitProcessDebugEvent called.");
+                this.monitorLogger.Log("OnExitProcessDebugEvent called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnExitProcessDebugEvent(ref de);
@@ -217,7 +224,7 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.EXIT_THREAD_DEBUG_EVENT))
             {
-                this.monitorLogger.Log("OnExitThreadDebugEvent called.");
+                this.monitorLogger.Log("OnExitThreadDebugEvent called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnExitThreadDebugEvent(ref de);
@@ -233,7 +240,7 @@
             if (this.EventsMonitored.HasFlag(EventFilter.LOAD_DLL_DEBUG_EVENT))
             {
                 string dllName = Auxiliary.GetFileNameFromHandle(de.LoadDll.hFile);
-                this.monitorLogger.Log("DLL loaded: " + dllName);
+                this.monitorLogger.Log("DLL loaded: " + dllName + " (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnLoadDllDebugEvent(ref de);
@@ -248,7 +255,7 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
             {
-                this.monitorLogger.Log("OnOutputDebugStringEvent called.");
+                this.monitorLogger.Log("OnOutputDebugStringEvent called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnOutputDebugStringEvent(ref de);
@@ -263,7 +270,7 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
             {
-                this.monitorLogger.Log("OnRipEvent called.");
+                this.monitorLogger.Log("OnRipEvent called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnRipEvent(ref de);
@@ -279,7 +286,7 @@
             if (this.EventsMonitored.HasFlag(EventFilter.UNLOAD_DLL_DEBUG_EVENT))
             {
                 string dllName = Auxiliary.GetFileNameFromHModule(de.UnloadDll.lpBaseOfDll);
-                this.monitorLogger.Log("DLL unloaded: " + dllName);
+                this.monitorLogger.Log("DLL unloaded: " + dllName + " (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnUnloadDllDebugEvent(ref de);
@@ -298,7 +305,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ACCESS_VIOLATION))
             {
-                this.monitorLogger.Log("OnAccessViolationDebugException called.");
+                this.monitorLogger.Log("OnAccessViolationDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnAccessViolationDebugException(ref de);
@@ -313,7 +320,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ARRAY_BOUNDS_EXCEEDED))
             {
-                this.monitorLogger.Log("OnArrayBoundsExceededDebugException called.");
+                this.monitorLogger.Log("OnArrayBoundsExceededDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnArrayBoundsExceededDebugException(ref de);
@@ -354,7 +361,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.DATATYPE_MISALIGNMENT))
             {
-                this.monitorLogger.Log("OnDatatypeMisalignmentDebugException called.");
+                this.monitorLogger.Log("OnDatatypeMisalignmentDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnDatatypeMisalignmentDebugException(ref de);
@@ -369,7 +376,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DENORMAL_OPERAND))
             {
-                this.monitorLogger.Log("OnFltDenormalOperandDebugException called.");
+                this.monitorLogger.Log("OnFltDenormalOperandDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltDenormalOperandDebugException(ref de);
@@ -384,7 +391,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_DIVIDE_BY_ZERO))
             {
-                this.monitorLogger.Log("OnFltDivideByZeroDebugException called.");
+                this.monitorLogger.Log("OnFltDivideByZeroDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltDivideByZeroDebugException(ref de);
@@ -399,7 +406,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INEXACT_RESULT))
             {
-                this.monitorLogger.Log("OnFltInexactResultDebugException called.");
+                this.monitorLogger.Log("OnFltInexactResultDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltInexactResultDebugException(ref de);
@@ -414,7 +421,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_INVALID_OPERATION))
             {
-                this.monitorLogger.Log("OnFltInvalidOperationDebugException called.");
+                this.monitorLogger.Log("OnFltInvalidOperationDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltInvalidOperationDebugException(ref de);
@@ -429,7 +436,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_OVERFLOW))
             {
-                this.monitorLogger.Log("OnFltOverflowDebugException called.");
+                this.monitorLogger.Log("OnFltOverflowDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltOverflowDebugException(ref de);
@@ -444,7 +451,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_STACK_CHECK))
             {
-                this.monitorLogger.Log("OnFltStackCheckDebugException called.");
+                this.monitorLogger.Log("OnFltStackCheckDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltStackCheckDebugException(ref de);
@@ -459,7 +466,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.FLT_UNDERFLOW))
             {
-                this.monitorLogger.Log("OnFltUnderflowDebugException called.");
+                this.monitorLogger.Log("OnFltUnderflowDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnFltUnderflowDebugException(ref de);
@@ -474,7 +481,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.GUARD_PAGE))
             {
-                this.monitorLogger.Log("OnGuardPageDebugException called.");
+                this.monitorLogger.Log("OnGuardPageDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnGuardPageDebugException(ref de);
@@ -489,7 +496,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ILLEGAL_INSTRUCTION))
             {
-                this.monitorLogger.Log("OnIllegalInstructionDebugException called.");
+                this.monitorLogger.Log("OnIllegalInstructionDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnIllegalInstructionDebugException(ref de);
@@ -504,7 +511,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.IN_PAGE_ERROR))
             {
-                this.monitorLogger.Log("OnInPageErrorDebugException called.");
+                this.monitorLogger.Log("OnInPageErrorDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnInPageErrorDebugException(ref de);
@@ -519,7 +526,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_DIVIDE_BY_ZERO))
             {
-                this.monitorLogger.Log("OnIntDivideByZeroDebugException called.");
+                this.monitorLogger.Log("OnIntDivideByZeroDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnIntDivideByZeroDebugException(ref de);
@@ -534,7 +541,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_OVERFLOW))
             {
-                this.monitorLogger.Log("OnIntOverflowDebugException called.");
+                this.monitorLogger.Log("OnIntOverflowDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnIntOverflowDebugException(ref de);
@@ -549,7 +556,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INVALID_DISPOSITION))
             {
-                this.monitorLogger.Log("OnInvalidDispositionDebugException called.");
+                this.monitorLogger.Log("OnInvalidDispositionDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnInvalidDispositionDebugException(ref de);
@@ -564,7 +571,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.NONCONTINUABLE_EXCEPTION))
             {
-                this.monitorLogger.Log("OnNoncontinuableExceptionDebugException called.");
+                this.monitorLogger.Log("OnNoncontinuableExceptionDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnNoncontinuableExceptionDebugException(ref de);
@@ -579,7 +586,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.PRIV_INSTRUCTION))
             {
-                this.monitorLogger.Log("OnPrivInstructionDebugException called.");
+                this.monitorLogger.Log("OnPrivInstructionDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnPrivInstructionDebugException(ref de);
@@ -594,7 +601,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.SINGLE_STEP))
             {
-                this.monitorLogger.Log("OnSingleStepDebugException called.");
+                this.monitorLogger.Log("OnSingleStepDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnSingleStepDebugException(ref de);
@@ -609,7 +616,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.STACK_OVERFLOW))
             {
-                this.monitorLogger.Log("OnStackOverflowDebugException called.");
+                this.monitorLogger.Log("OnStackOverflowDebugException called. (" + this.InstanceIdentifier + ")");
             }
 
             return base.OnStackOverflowDebugException(ref de);
