@@ -17,56 +17,6 @@
         #region Fields
 
         /// <summary>
-        /// An event filter that will log all debug events.
-        /// </summary>
-        public const EventFilter AllEvents =
-            EventFilter.EXCEPTION_DEBUG_EVENT |
-            EventFilter.CREATE_THREAD_DEBUG_EVENT |
-            EventFilter.CREATE_PROCESS_DEBUG_EVENT |
-            EventFilter.EXIT_THREAD_DEBUG_EVENT |
-            EventFilter.EXIT_PROCESS_DEBUG_EVENT |
-            EventFilter.LOAD_DLL_DEBUG_EVENT |
-            EventFilter.UNLOAD_DLL_DEBUG_EVENT |
-            EventFilter.OUTPUT_DEBUG_STRING_EVENT |
-            EventFilter.RIP_EVENT;
-
-        /// <summary>
-        /// An exception filter that will log all debug exceptions.
-        /// </summary>
-        public const ExceptionFilter AllExceptions =
-            ExceptionFilter.GUARD_PAGE |
-            ExceptionFilter.DATATYPE_MISALIGNMENT |
-            ExceptionFilter.BREAKPOINT |
-            ExceptionFilter.SINGLE_STEP |
-            ExceptionFilter.INVALID_HANDLE |
-            ExceptionFilter.ACCESS_VIOLATION |
-            ExceptionFilter.IN_PAGE_ERROR |
-            ExceptionFilter.ILLEGAL_INSTRUCTION |
-            ExceptionFilter.NONCONTINUABLE_EXCEPTION |
-            ExceptionFilter.INVALID_DISPOSITION |
-            ExceptionFilter.ARRAY_BOUNDS_EXCEEDED |
-            ExceptionFilter.FLT_DENORMAL_OPERAND |
-            ExceptionFilter.FLT_DIVIDE_BY_ZERO |
-            ExceptionFilter.FLT_INEXACT_RESULT |
-            ExceptionFilter.FLT_INVALID_OPERATION |
-            ExceptionFilter.FLT_OVERFLOW |
-            ExceptionFilter.FLT_STACK_CHECK |
-            ExceptionFilter.FLT_UNDERFLOW |
-            ExceptionFilter.INT_DIVIDE_BY_ZERO |
-            ExceptionFilter.INT_OVERFLOW |
-            ExceptionFilter.PRIV_INSTRUCTION |
-            ExceptionFilter.STACK_OVERFLOW;
-
-        /// <summary>
-        /// An exception filter that will log all (potentially) exploitable debug exceptions.
-        /// </summary>
-        public const ExceptionFilter ExploitableExceptions =
-            ExceptionFilter.GUARD_PAGE |
-            ExceptionFilter.ACCESS_VIOLATION |
-            ExceptionFilter.INT_OVERFLOW |
-            ExceptionFilter.STACK_OVERFLOW;
-
-        /// <summary>
         /// All event and exception handlers in DebugMon send log entries to this logger.
         /// </summary>
         private Logger monitorLogger;
@@ -103,7 +53,15 @@
             LOAD_DLL_DEBUG_EVENT = 0x0020,
             UNLOAD_DLL_DEBUG_EVENT = 0x0040,
             OUTPUT_DEBUG_STRING_EVENT = 0x0080,
-            RIP_EVENT = 0x0100
+            RIP_EVENT = 0x0100,
+
+            /// <summary>
+            /// All is not an official MSDN event type, but is a shorthand for all debug events.
+            /// </summary>
+            All =
+                EXCEPTION_DEBUG_EVENT | CREATE_THREAD_DEBUG_EVENT | CREATE_PROCESS_DEBUG_EVENT |
+                EXIT_THREAD_DEBUG_EVENT | EXIT_PROCESS_DEBUG_EVENT | LOAD_DLL_DEBUG_EVENT | UNLOAD_DLL_DEBUG_EVENT |
+                OUTPUT_DEBUG_STRING_EVENT | RIP_EVENT,
         }
 
         /// <summary>
@@ -134,7 +92,23 @@
             INT_DIVIDE_BY_ZERO = 0x00040000,
             INT_OVERFLOW = 0x00080000,
             PRIV_INSTRUCTION = 0x00100000,
-            STACK_OVERFLOW = 0x00200000
+            STACK_OVERFLOW = 0x00200000,
+
+            /// <summary>
+            /// All is not an official MSDN exception type, but is a shorthand for all debug exceptions.
+            /// </summary>
+            All =
+                GUARD_PAGE | DATATYPE_MISALIGNMENT | BREAKPOINT | SINGLE_STEP | INVALID_HANDLE | ACCESS_VIOLATION |
+                IN_PAGE_ERROR | ILLEGAL_INSTRUCTION | NONCONTINUABLE_EXCEPTION | INVALID_DISPOSITION |
+                ARRAY_BOUNDS_EXCEEDED | FLT_DENORMAL_OPERAND | FLT_DIVIDE_BY_ZERO | FLT_INEXACT_RESULT |
+                FLT_INVALID_OPERATION | FLT_OVERFLOW | FLT_STACK_CHECK | FLT_UNDERFLOW | INT_DIVIDE_BY_ZERO |
+                INT_OVERFLOW | PRIV_INSTRUCTION | STACK_OVERFLOW,
+
+            /// <summary>
+            /// Exploitable is not an official MSDN exception type, but is a shorthand for all debug exceptions that
+            /// could be exploitable or could indicate an exploitable condition exists.
+            /// </summary>
+            Exploitable = GUARD_PAGE | ACCESS_VIOLATION | INT_OVERFLOW | STACK_OVERFLOW,
         }
 
         #endregion
