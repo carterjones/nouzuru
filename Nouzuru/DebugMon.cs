@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Text;
     using Logger;
+    using Distorm3cs;
 
     /// <summary>
     /// A class that logs each possible debug event and debug exception, attempting to provide detailed data about the
@@ -312,7 +313,11 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ACCESS_VIOLATION))
             {
-                this.monitorLogger.Log("OnAccessViolationDebugException called. (" + this.InstanceIdentifier + ")");
+                IntPtr exceptionAddress = de.Exception.ExceptionRecord.ExceptionAddress;
+                string inst = this.DisassembleInstructionAtAddress(exceptionAddress);
+                string message =
+                    "Access violation at " + this.IntPtrToFormattedAddress(exceptionAddress) + " - " + inst;
+                this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
             }
 
             return base.OnAccessViolationDebugException(ref de);
@@ -641,6 +646,38 @@
             {
                 return message;
             }
+        }
+
+        private string DisassembleInstructionAtAddress(IntPtr address)
+        {
+            byte[] instData = new byte[16];
+            if (!this.Read(address, instData))
+            {
+                this.Status.Log(
+                    "Unable to read address " + this.IntPtrToFormattedAddress(address),
+                    Logger.Level.HIGH);
+                return "<instruction disassembly failed>";
+            }
+
+            List<string> insts = new List<string>();
+            if (this.Is64Bit)
+            {
+                insts = Distorm.Disassemble(instData, 0, Distorm.DecodeType.Decode64Bits);
+            }
+            else
+            {
+                insts = Distorm.Disassemble(instData, 0, Distorm.DecodeType.Decode32Bits);
+            }
+
+            if (insts.Count == 0)
+            {
+                string dataAsHexString =
+                    string.Join(" ", instData.Select(x => x.ToString("x").PadLeft(2, '0')).ToArray());
+                this.Status.Log("Distorm3cs failed to disassemble the following bytes: " + dataAsHexString);
+                return "<instruction disassembly failed>";
+            }
+
+            return insts[0];
         }
 
         #endregion
