@@ -313,11 +313,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.ACCESS_VIOLATION))
             {
-                IntPtr exceptionAddress = de.Exception.ExceptionRecord.ExceptionAddress;
-                string inst = this.DisassembleInstructionAtAddress(exceptionAddress);
-                string message =
-                    "An access violation occurred at " +
-                    this.IntPtrToFormattedAddress(exceptionAddress) + " - " + inst;
+                string message = this.GetExceptionAddressData(de.Exception.ExceptionRecord.ExceptionAddress);
                 this.monitorLogger.Log(this.AppendInstanceIdentifier(message));
                 this.LogRegisters(ref de);
                 this.LogExceptionRecord(de.Exception.ExceptionRecord);
@@ -496,6 +492,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.GUARD_PAGE))
             {
+                this.GetExceptionAddressData(de.Exception.ExceptionRecord.ExceptionAddress);
                 this.LogGenericException(ref de);
             }
 
@@ -556,6 +553,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.INT_OVERFLOW))
             {
+                this.GetExceptionAddressData(de.Exception.ExceptionRecord.ExceptionAddress);
                 this.LogGenericException(ref de);
             }
 
@@ -631,6 +629,7 @@
         {
             if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.STACK_OVERFLOW))
             {
+                this.GetExceptionAddressData(de.Exception.ExceptionRecord.ExceptionAddress);
                 this.LogGenericException(ref de);
             }
 
@@ -730,6 +729,20 @@
             string[] parts =
                 code.Split('_').Select(x => x[0].ToString().ToUpper() + new string(x.Skip(1).ToArray())).ToArray();
             return string.Join(" ", parts);
+        }
+
+        /// <summary>
+        /// Get information that relates to the instruction where an exception has occurred.
+        /// </summary>
+        /// <param name="address">The address of the execption.</param>
+        /// <returns>Returns the information as a single line string.</returns>
+        private string GetExceptionAddressData(IntPtr address)
+        {
+            string inst = this.DisassembleInstructionAtAddress(address);
+            string message =
+                "An access violation occurred at " +
+                this.IntPtrToFormattedAddress(address) + " - " + inst;
+            return message;
         }
 
         /// <summary>
