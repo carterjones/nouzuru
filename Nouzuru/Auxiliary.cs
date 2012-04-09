@@ -58,5 +58,23 @@
 
             return "Empty filemap handle.";
         }
+
+        /// <summary>
+        /// A generic data structure that represents a pair of items.
+        /// </summary>
+        /// <typeparam name="T1">The type of the first item.</typeparam>
+        /// <typeparam name="T2">The type of the second item.</typeparam>
+        public struct Pair<T1, T2>
+        {
+            /// <summary>
+            /// The first item of the pair.
+            /// </summary>
+            public T1 Item1;
+
+            /// <summary>
+            /// The second item of the pair.
+            /// </summary>
+            public T2 Item2;
+        }
     }
 }
