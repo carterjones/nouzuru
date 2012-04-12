@@ -235,7 +235,28 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.OUTPUT_DEBUG_STRING_EVENT))
             {
-                this.monitorLogger.Log("OnOutputDebugStringEvent called. (" + this.InstanceIdentifier + ")");
+                bool isAscii = de.DebugString.fUnicode == 0;
+                ushort size = de.DebugString.nDebugStringLength;
+                byte[] data = new byte[size];
+                if (!this.Read(de.DebugString.lpDebugStringData, data))
+                {
+                    return base.OnOutputDebugStringEvent(ref de);
+                }
+
+                string debugString = string.Empty;
+                if (isAscii)
+                {
+                    debugString = Encoding.ASCII.GetString(data);
+                }
+                else
+                {
+                    debugString = Encoding.Unicode.GetString(data);
+                }
+
+                debugString = debugString.TrimEnd(new char[] { '\r', '\n', '\0' });
+
+                this.monitorLogger.Log(
+                    this.AppendInstanceIdentifier("Debug string received: \"" + debugString + "\""));
             }
 
             return base.OnOutputDebugStringEvent(ref de);
