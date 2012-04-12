@@ -271,7 +271,14 @@
         {
             if (this.EventsMonitored.HasFlag(EventFilter.RIP_EVENT))
             {
-                this.monitorLogger.Log("OnRipEvent called. (" + this.InstanceIdentifier + ")");
+                StringBuilder msg = new StringBuilder();
+                msg.Append("A RIP event occured");
+                if (Enum.IsDefined(typeof(WinApi.RipInfoTypes), (WinApi.RipInfoTypes)de.RipInfo.dwType))
+                {
+                    msg.Append(" (" + ((WinApi.RipInfoTypes)de.RipInfo.dwType).ToString() + ")");
+                }
+
+                msg.Append(". Error code: " + de.RipInfo.dwError);
             }
 
             return base.OnRipEvent(ref de);

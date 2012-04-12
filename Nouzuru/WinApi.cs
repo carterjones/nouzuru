@@ -213,6 +213,13 @@
             QUERY_LIMITED_INFORMATION = 0x1000
         }
 
+        public enum RipInfoTypes : uint
+        {
+            SLE_ERROR = 0x00000001,
+            SLE_MINORERROR = 0x00000002,
+            SLE_WARNING = 0x00000003
+        }
+
         [Flags]
         public enum ThreadAccess : uint
         {
