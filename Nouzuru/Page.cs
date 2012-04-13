@@ -31,5 +31,33 @@
         {
             get { return (uint)this.Data.Length; }
         }
+
+        public bool Disassemble(Distorm.DecodeType decodeType)
+        {
+            if (this.Data.Length == 0)
+            {
+                return false;
+            }
+
+            if (this.InstructionsDisassembled.Count != 0)
+            {
+                this.InstructionsDisassembled = Distorm.Disassemble(this.Data, (ulong)Address.ToInt64(), decodeType);
+                if (this.InstructionsDisassembled.Count == 0)
+                {
+                    return false;
+                }
+            }
+
+            if (this.InstructionsDecomposed.Length != 0)
+            {
+                this.InstructionsDecomposed = Distorm.Decompose(this.Data, (ulong)Address.ToInt64(), decodeType);
+                if (this.InstructionsDecomposed.Length == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 }

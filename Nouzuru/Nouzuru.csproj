@@ -66,6 +66,7 @@
     <Compile Include="DllInjector.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="Logger.cs" />
+    <Compile Include="FlowAnalyzer.cs" />
     <Compile Include="Page.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="PInteractor.cs" />
