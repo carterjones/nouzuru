@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
+    using System.Runtime.InteropServices;
     using System.Text;
     using Distorm3cs;
     using Logger;
@@ -882,37 +883,31 @@
         /// <param name="cx">The context of the paused thread that will have its registers logged.</param>
         protected void LogRegisters(ref WinApi.CONTEXT cx)
         {
-#if WIN64
+            int paddingSize = Marshal.SizeOf(IntPtr.Zero) * 2;
+            string registerPrefix = string.Empty;
+            if (paddingSize == 8)
+            {
+                registerPrefix = "e";
+            }
+            else
+            {
+                registerPrefix = "r";
+            }
+
             this.monitorLogger.Log(
-                "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
-                "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
-                "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
-                "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
-                "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
-                "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
+                registerPrefix + "ax:" + cx._ax.ToString("X").PadLeft(paddingSize, '0') + " " +
+                registerPrefix + "bx:" + cx._bx.ToString("X").PadLeft(paddingSize, '0') + " " +
+                registerPrefix + "cx:" + cx._cx.ToString("X").PadLeft(paddingSize, '0') + " " +
+                registerPrefix + "dx:" + cx._dx.ToString("X").PadLeft(paddingSize, '0') + " " +
+                registerPrefix + "ip:" + cx._ip.ToString("X").PadLeft(paddingSize, '0') + " " +
+                registerPrefix + "bp:" + cx._bp.ToString("X").PadLeft(paddingSize, '0'));
             this.monitorLogger.Log(
-                "dr0:" + cx.Dr0.ToString("X").PadLeft(16, '0') +
-                "dr1:" + cx.Dr1.ToString("X").PadLeft(16, '0') +
-                "dr2:" + cx.Dr2.ToString("X").PadLeft(16, '0') +
-                "dr3:" + cx.Dr3.ToString("X").PadLeft(16, '0') +
-                "dr6:" + cx.Dr6.ToString("X").PadLeft(16, '0') +
-                "dr7:" + cx.Dr7.ToString("X").PadLeft(16, '0'));
-#else
-            this.monitorLogger.Log(
-                "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
-                " ebx:" + cx.Ebx.ToString("X").PadLeft(8, '0') +
-                " ecx:" + cx.Ecx.ToString("X").PadLeft(8, '0') +
-                " edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
-                " eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
-                " ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
-            this.monitorLogger.Log(
-                "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
-                " dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
-                " dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
-                " dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
-                " dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
-                " dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
-#endif
+                "dr0:" + cx.Dr0.ToString("X").PadLeft(paddingSize, '0') +
+                " dr1:" + cx.Dr1.ToString("X").PadLeft(paddingSize, '0') +
+                " dr2:" + cx.Dr2.ToString("X").PadLeft(paddingSize, '0') +
+                " dr3:" + cx.Dr3.ToString("X").PadLeft(paddingSize, '0') +
+                " dr6:" + cx.Dr6.ToString("X").PadLeft(paddingSize, '0') +
+                " dr7:" + cx.Dr7.ToString("X").PadLeft(paddingSize, '0'));
         }
 
         /// <summary>
