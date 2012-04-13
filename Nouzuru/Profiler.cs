@@ -47,6 +47,48 @@
         }
 
         /// <summary>
+        /// Sets a soft breakpoint in the target starting at the supplied address for the specified number of
+        /// instructions.
+        /// </summary>
+        /// <param name="startAddress">The first address at which a breakpoint will be set.</param>
+        /// <param name="numInstructions">The number of instructions on which breakpoints will be set.</param>
+        /// <returns>Returns true if the breakpoints were successfully set.</returns>
+        public bool SetBreakpoints(IntPtr startAddress, uint numInstructions)
+        {
+            if (numInstructions == 0)
+            {
+                return true;
+            }
+
+            byte[] data = new byte[numInstructions*15];
+            if (!this.Read(startAddress, data))
+            {
+                return false;
+            }
+
+            Distorm.DecodeType dt =
+                (this.Is64Bit ? Distorm.DecodeType.Decode64Bits : Distorm.DecodeType.Decode32Bits);
+            Distorm.DInst[] insts = Distorm.Decompose(data, (ulong)startAddress.ToInt64(), dt);
+            if (insts.Length == 0)
+            {
+                return false;
+            }
+
+            for (uint i = 0; i < numInstructions && i < insts.Length; ++i)
+            {
+                if (!this.SetSoftBP(new IntPtr((long)insts[i].addr)))
+                {
+                    this.Status.Log(
+                        "Error setting breakpoint at " +
+                        this.IntPtrToFormattedAddress(new IntPtr((long)insts[i].addr)));
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Handles the EXCEPTION_BREAKPOINT debug exception.
         /// Causes the process to trigger a single step debug exception.
         /// </summary>
