@@ -29,7 +29,7 @@
         /// Initializes a new instance of the DebugMon class.
         /// </summary>
         /// <param name="filename">The name of the file that will log all of the monitor's results.</param>
-        public DebugMon(string filename)
+        public DebugMon(string filename = "debugmon.log")
         {
             this.monitorLogger = new Logger(Logger.Type.FILE | Logger.Type.CONSOLE, Logger.Level.NONE, filename);
         }
@@ -648,7 +648,7 @@
         /// <returns>
         /// Returns the message with the appended instance identifier, if an identifier has been defiened.
         /// </returns>
-        private string AppendInstanceIdentifier(string message)
+        protected string AppendInstanceIdentifier(string message)
         {
             if (!string.IsNullOrEmpty(this.InstanceIdentifier))
             {
@@ -665,7 +665,7 @@
         /// </summary>
         /// <param name="address">The address where the instruction to be disassembled resides.</param>
         /// <returns>Returns the disassembled instruction.</returns>
-        private string DisassembleInstructionAtAddress(IntPtr address)
+        protected string DisassembleInstructionAtAddress(IntPtr address)
         {
             byte[] instData = new byte[16];
             if (!this.Read(address, instData))
@@ -704,7 +704,7 @@
         /// <returns>
         /// On success, returns the exception code as a string. On failure, returns "UNKNOWN_EXCEPTION".
         /// </returns>
-        private string ExceptionCodeToString(uint exceptionCode)
+        protected string ExceptionCodeToString(uint exceptionCode)
         {
             Array values = Enum.GetValues(typeof(WinApi.ExceptionType));
             foreach (var value in values)
@@ -726,7 +726,7 @@
         /// <returns>
         /// On success, returns the exception code as a string. On failure, returns "Unknown Exception".
         /// </returns>
-        private string ExceptionCodeToPrettyString(uint exceptionCode)
+        protected string ExceptionCodeToPrettyString(uint exceptionCode)
         {
             string code = this.ExceptionCodeToString(exceptionCode).ToLower();
             string[] parts =
@@ -739,7 +739,7 @@
         /// </summary>
         /// <param name="address">The address of the execption.</param>
         /// <returns>Returns the information as a single line string.</returns>
-        private string GetExceptionAddressData(IntPtr address)
+        protected string GetExceptionAddressData(IntPtr address)
         {
             string inst = this.DisassembleInstructionAtAddress(address);
             string message =
@@ -757,7 +757,7 @@
         /// <returns>
         /// Returns the disassembled and decomposed instructions that surround the specified address.
         /// </returns>
-        private Auxiliary.Pair<List<string>, List<Distorm.DInst>> GetSurroundingInsts(
+        protected Auxiliary.Pair<List<string>, List<Distorm.DInst>> GetSurroundingInsts(
             IntPtr address, uint numBefore, uint numAfter)
         {
             long firstAddress = address.ToInt64() - (numBefore * 15);
@@ -827,9 +827,9 @@
         /// </summary>
         /// <param name="er">The exception record to be logged.</param>
 #if WIN64
-        private void LogExceptionRecord(WinApi.EXCEPTION_RECORD64 er)
+        protected void LogExceptionRecord(WinApi.EXCEPTION_RECORD64 er)
 #else
-        private void LogExceptionRecord(WinApi.EXCEPTION_RECORD32 er)
+        protected void LogExceptionRecord(WinApi.EXCEPTION_RECORD32 er)
 #endif
         {
             this.monitorLogger.Log("ExceptionAddress: " + this.IntPtrToFormattedAddress(er.ExceptionAddress));
@@ -853,7 +853,7 @@
         /// Logs generic information about an exception.
         /// </summary>
         /// <param name="de">The debug event that contains the exception that was thrown.</param>
-        private void LogGenericException(ref WinApi.DEBUG_EVENT de)
+        protected void LogGenericException(ref WinApi.DEBUG_EVENT de)
         {
             this.monitorLogger.Log(this.AppendInstanceIdentifier(
                 "An exception occurred: " +
@@ -867,12 +867,21 @@
         /// Logs the registers at the time the debug event was caught.
         /// </summary>
         /// <param name="de">The debug event that was caught.</param>
-        private void LogRegisters(ref WinApi.DEBUG_EVENT de)
+        protected void LogRegisters(ref WinApi.DEBUG_EVENT de)
         {
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
             this.BeginEditThread(de.dwThreadId, out threadHandle, out cx);
+            this.LogRegisters(ref cx);
+            this.EndEditThread(ref threadHandle, ref cx);
+        }
 
+        /// <summary>
+        /// Logs the registers at the time the debug event was caught.
+        /// </summary>
+        /// <param name="cx">The context of the paused thread that will have its registers logged.</param>
+        protected void LogRegisters(ref WinApi.CONTEXT cx)
+        {
 #if WIN64
             this.monitorLogger.Log(
                 "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
@@ -904,8 +913,6 @@
                 " dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
                 " dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
 #endif
-
-            this.EndEditThread(ref threadHandle, ref cx);
         }
 
         /// <summary>
@@ -915,7 +922,7 @@
         /// <param name="numBefore">The number of instructions before the middle instruction.</param>
         /// <param name="numAfter">The number of instructions after the middle instruction.</param>
         /// <returns>Returns true if the logging process was successful.</returns>
-        private bool LogSurroundingInstructions(IntPtr address, uint numBefore, uint numAfter)
+        protected bool LogSurroundingInstructions(IntPtr address, uint numBefore, uint numAfter)
         {
             Auxiliary.Pair<List<string>, List<Distorm.DInst>> surroundingInsts =
                 this.GetSurroundingInsts(address, numBefore, numAfter);
