@@ -10,7 +10,7 @@
     using Logger;
 
     /// <summary>
-    /// A simple, but extensible debugger class that provides core debugging traps.
+    /// A simple, but extensible, debugger class that provides core debugging traps.
     /// </summary>
     public class Debugger : Patcher
     {
