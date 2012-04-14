@@ -653,13 +653,10 @@
 
             private T GetDebugInfo<T>() where T : struct
             {
-                var structSize = Marshal.SizeOf(typeof(T));
-                var pointer = Marshal.AllocHGlobal(structSize);
-                Marshal.Copy(this.debugInfo, 0, pointer, structSize);
-
-                var result = Marshal.PtrToStructure(pointer, typeof(T));
-                Marshal.FreeHGlobal(pointer);
-                return (T)result;
+                GCHandle handle = GCHandle.Alloc(this.debugInfo, GCHandleType.Pinned);
+                T result = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+                handle.Free();
+                return result;
             }
         }
 
