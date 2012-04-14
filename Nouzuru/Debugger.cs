@@ -1167,6 +1167,11 @@
                         this.SetSoftBP(this.Proc.MainModule.EntryPointAddress);
                         isFirstInstBreakpointSet = true;
                     }
+                    catch (NullReferenceException)
+                    {
+                        // Let the .NET Framework calm down and then continue once its feathers are unruffled.
+                        continue;
+                    }
                     catch (System.ComponentModel.Win32Exception e)
                     {
                         if (e.NativeErrorCode == 299)
