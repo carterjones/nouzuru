@@ -8,7 +8,7 @@
     using Logger;
 
     /// <summary>
-    /// A scanner that can be used to search a process for data.
+    /// A memory scanner that can be used to search a process for data.
     /// </summary>
     public class Scanner : PInteractor, INotifyPropertyChanged
     {
