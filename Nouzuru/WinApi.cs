@@ -679,11 +679,11 @@
             [MarshalAs(UnmanagedType.SysUInt)]
             public IntPtr ExceptionAddress;
             public uint NumberParameters;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
             public uint[] ExceptionInformation;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct EXCEPTION_RECORD64
         {
             public uint ExceptionCode;
