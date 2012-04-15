@@ -922,7 +922,8 @@
             Auxiliary.Pair<List<string>, List<Distorm.DInst>> surroundingInsts =
                 this.GetSurroundingInsts(address, numBefore, numAfter);
 
-            if (surroundingInsts.Item1.Count == 0 || surroundingInsts.Item2.Count == 0)
+            if (surroundingInsts.Item1 == null || surroundingInsts.Item2 == null ||
+                surroundingInsts.Item1.Count == 0 || surroundingInsts.Item2.Count == 0)
             {
                 return false;
             }
