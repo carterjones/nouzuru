@@ -1198,6 +1198,7 @@
 
                         switch (de.Exception.ExceptionRecord.ExceptionCode)
                         {
+                            case (uint)WinApi.ExceptionType.STATUS_WX86_SINGLE_STEP:
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 continueStatus = this.OnSingleStepDebugException(ref de);
                                 break;
@@ -1210,6 +1211,7 @@
                                 continueStatus = this.OnArrayBoundsExceededDebugException(ref de);
                                 break;
 
+                            case (uint)WinApi.ExceptionType.STATUS_WX86_BREAKPOINT:
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
                                 continueStatus = this.OnBreakpointDebugException(ref de);
                                 break;
