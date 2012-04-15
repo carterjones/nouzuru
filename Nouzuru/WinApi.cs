@@ -594,6 +594,7 @@
             public uint dwThreadId;
 
 #if WIN64
+            private uint __padding;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)]
 #else
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 84, ArraySubType = UnmanagedType.U1)]
