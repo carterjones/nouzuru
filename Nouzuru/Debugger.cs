@@ -10,7 +10,7 @@
     using Logger;
 
     /// <summary>
-    /// A simple, but extensible debugger class that provides core debugging traps.
+    /// A simple, but extensible, debugger class that provides core debugging traps.
     /// </summary>
     public class Debugger : Patcher
     {
@@ -448,39 +448,11 @@
                 return false;
             }
 
-            WinApi.ThreadAccess threadRights =
-                WinApi.ThreadAccess.SET_CONTEXT |
-                WinApi.ThreadAccess.GET_CONTEXT |
-                WinApi.ThreadAccess.SUSPEND_RESUME;
-            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
-            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
             {
-                this.Status.Log(
-                    "Could not open thread to remove hardware breakpoints. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-            }
-
-            uint res = WinApi.SuspendThread(threadHandle);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to suspend thread when removing breakpoints. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    return false;
-                }
-            }
-
-            WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.GetThreadContext(threadHandle, ref cx))
-            {
-                WinApi.CloseHandle(threadHandle);
-                this.Status.Log(
-                    "Unable to get thread context when removing breakpoints. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                this.Status.Log("Could not begin editing a thread to remove hardware breakpoints.");
                 return false;
             }
 
@@ -490,26 +462,11 @@
             cx.Dr2 = 0x0;
             cx.Dr3 = 0x0;
             cx.Dr7 = 0x0;
-            if (!WinApi.SetThreadContext(threadHandle, ref cx))
-            {
-                WinApi.CloseHandle(threadHandle);
-                this.Status.Log(
-                    "Unable to get thread context when removing breakpoints. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                return false;
-            }
 
-            res = WinApi.ResumeThread(threadHandle);
-            unchecked
+            if (!this.EndEditThread(ref threadHandle, ref cx))
             {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to resume thread when removing breakpoints. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    return false;
-                }
+                this.Status.Log("Unable to end editing a thread when removing breakpoints.");
+                return false;
             }
 
             WinApi.CloseHandle(threadHandle);
@@ -1167,6 +1124,11 @@
                         this.SetSoftBP(this.Proc.MainModule.EntryPointAddress);
                         isFirstInstBreakpointSet = true;
                     }
+                    catch (NullReferenceException)
+                    {
+                        // Let the .NET Framework calm down and then continue once its feathers are unruffled.
+                        continue;
+                    }
                     catch (System.ComponentModel.Win32Exception e)
                     {
                         if (e.NativeErrorCode == 299)
@@ -1193,6 +1155,7 @@
 
                         switch (de.Exception.ExceptionRecord.ExceptionCode)
                         {
+                            case (uint)WinApi.ExceptionType.STATUS_WX86_SINGLE_STEP:
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 continueStatus = this.OnSingleStepDebugException(ref de);
                                 break;
@@ -1205,6 +1168,7 @@
                                 continueStatus = this.OnArrayBoundsExceededDebugException(ref de);
                                 break;
 
+                            case (uint)WinApi.ExceptionType.STATUS_WX86_BREAKPOINT:
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
                                 continueStatus = this.OnBreakpointDebugException(ref de);
                                 break;

@@ -128,6 +128,7 @@
 
         public enum ExceptionType : uint
         {
+            // Normal debug execptions.
             GUARD_PAGE = 0x80000001,
             DATATYPE_MISALIGNMENT = 0x80000002,
             BREAKPOINT = 0x80000003,
@@ -150,6 +151,15 @@
             INT_OVERFLOW = 0xC0000095,
             PRIV_INSTRUCTION = 0xC0000096,
             STACK_OVERFLOW = 0xC00000FD,
+
+            // Wow64-related debug exceptions.
+            STATUS_WX86_UNSIMULATE = 0x4000001C,
+            STATUS_WX86_CONTINUE = 0x4000001D,
+            STATUS_WX86_SINGLE_STEP = 0x4000001E,
+            STATUS_WX86_BREAKPOINT = 0x4000001F,
+            STATUS_WX86_EXCEPTION_CONTINUE = 0x40000020,
+            STATUS_WX86_EXCEPTION_LASTCHANCE = 0x40000021,
+            STATUS_WX86_EXCEPTION_CHAIN = 0x40000022,
         }
 
         [Flags]
@@ -584,6 +594,7 @@
             public uint dwThreadId;
 
 #if WIN64
+            private uint __padding;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)]
 #else
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 84, ArraySubType = UnmanagedType.U1)]
@@ -668,11 +679,11 @@
             [MarshalAs(UnmanagedType.SysUInt)]
             public IntPtr ExceptionAddress;
             public uint NumberParameters;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15, ArraySubType = UnmanagedType.U4)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
             public uint[] ExceptionInformation;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct EXCEPTION_RECORD64
         {
             public uint ExceptionCode;
