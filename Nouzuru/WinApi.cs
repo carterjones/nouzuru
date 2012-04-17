@@ -586,18 +586,21 @@
             public PTHREAD_START_ROUTINE lpStartAddress;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit)]
         public struct DEBUG_EVENT
         {
+            [FieldOffset(0)]
             public uint dwDebugEventCode;
+            [FieldOffset(4)]
             public uint dwProcessId;
+            [FieldOffset(8)]
             public uint dwThreadId;
-
 #if WIN64
-            private uint __padding;
+            [FieldOffset(16)]
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 164, ArraySubType = UnmanagedType.U1)]
 #else
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 84, ArraySubType = UnmanagedType.U1)]
+            [FieldOffset(12)]
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 86, ArraySubType = UnmanagedType.U1)]
 #endif
             private byte[] debugInfo;
 
@@ -674,24 +677,27 @@
         {
             public uint ExceptionCode;
             public uint ExceptionFlags;
-            [MarshalAs(UnmanagedType.SysUInt)]
             public IntPtr ExceptionRecord;
-            [MarshalAs(UnmanagedType.SysUInt)]
             public IntPtr ExceptionAddress;
             public uint NumberParameters;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
             public uint[] ExceptionInformation;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit)]
         public struct EXCEPTION_RECORD64
         {
+            [FieldOffset(0)]
             public uint ExceptionCode;
+            [FieldOffset(4)]
             public uint ExceptionFlags;
+            [FieldOffset(8)]
             public IntPtr ExceptionRecord;
+            [FieldOffset(16)]
             public IntPtr ExceptionAddress;
+            [FieldOffset(24)]
             public uint NumberParameters;
-            private uint __unusedAlignment;
+            [FieldOffset(32)]
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 15)]
             public ulong[] ExceptionInformation;
         }
