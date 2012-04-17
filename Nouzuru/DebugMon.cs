@@ -39,6 +39,7 @@
 
         #region Enumerations
 
+#pragma warning disable 1591
         /// <summary>
         /// A collection of flags that correspond to debug events. These are used in filtering log entries.
         /// </summary>
@@ -111,6 +112,8 @@
             /// </summary>
             Exploitable = GUARD_PAGE | ACCESS_VIOLATION | INT_OVERFLOW | STACK_OVERFLOW,
         }
+
+#pragma warning restore 1591
 
         #endregion
 
