@@ -16,7 +16,7 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
-    <DocumentationFile>bin\($Platform)\Release\Nouzuru.XML</DocumentationFile>
+    <DocumentationFile>bin\$(Platform)\Release\Nouzuru.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)' == 'x86'">
     <PlatformTarget>x86</PlatformTarget>
