@@ -51,6 +51,7 @@
     <Compile Include="BasicBlock.cs" />
     <Compile Include="Debugger.cs" />
     <Compile Include="DllInjector.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="Page.cs" />
     <Compile Include="Patcher.cs" />
     <Compile Include="PInteractor.cs" />

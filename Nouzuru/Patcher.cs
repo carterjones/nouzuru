@@ -412,7 +412,7 @@
         public bool WriteStructure<T>(
             IntPtr address, T newValue, Patcher.WriteOptions options = WriteOptions.SaveOldValue)
         {
-            byte[] bytes = Auxiliary.GetBytes<T>(newValue);
+            byte[] bytes = newValue.GetBytes();
 
             IntPtr allocMem = WinApi.VirtualAllocEx(
                 this.ProcHandle,
