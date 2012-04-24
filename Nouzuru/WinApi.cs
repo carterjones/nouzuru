@@ -213,6 +213,13 @@
             QUERY_LIMITED_INFORMATION = 0x1000
         }
 
+        public enum RipInfoTypes : uint
+        {
+            SLE_ERROR = 0x00000001,
+            SLE_MINORERROR = 0x00000002,
+            SLE_WARNING = 0x00000003
+        }
+
         [Flags]
         public enum ThreadAccess : uint
         {
@@ -293,6 +300,14 @@
         [DllImport("psapi.dll", SetLastError = true)]
         public static extern uint GetMappedFileName(
             IntPtr hProcess, IntPtr lpv, StringBuilder lpFilename, uint nSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern uint GetModuleFileName(
+            [In] IntPtr hModule, [Out] StringBuilder lpFilename, [In] [MarshalAs(UnmanagedType.U4)] int nSize);
+
+        [DllImport("psapi.dll", SetLastError = true)]
+        public static extern uint GetModuleFileNameEx(
+            IntPtr hProc, IntPtr hModule, StringBuilder lpFilename, [MarshalAs(UnmanagedType.U4)] int nSize);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetModuleHandle(string lpModuleName);
@@ -531,6 +546,78 @@
             public ulong LastBranchFromRip;
             public ulong LastExceptionToRip;
             public ulong LastExceptionFromRip;
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *ax register.
+            /// </summary>
+            public ulong _ax
+            {
+                get { return this.Rax; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *bx register.
+            /// </summary>
+            public ulong _bx
+            {
+                get { return this.Rbx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *cx register.
+            /// </summary>
+            public ulong _cx
+            {
+                get { return this.Rcx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *dx register.
+            /// </summary>
+            public ulong _dx
+            {
+                get { return this.Rdx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *sp register.
+            /// </summary>
+            public ulong _sp
+            {
+                get { return this.Rsp; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *bp register.
+            /// </summary>
+            public ulong _bp
+            {
+                get { return this.Rbp; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *di register.
+            /// </summary>
+            public ulong _di
+            {
+                get { return this.Rdi; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *si register.
+            /// </summary>
+            public ulong _si
+            {
+                get { return this.Rsi; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *ip register.
+            /// </summary>
+            public ulong _ip
+            {
+                get { return this.Rip; }
+            }
         }
 #else
         [StructLayout(LayoutKind.Sequential)]
@@ -562,6 +649,78 @@
             public uint SegSs;
             [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
             public byte[] ExtendedRegisters;
+
+            /// <summary>
+            /// Gets Gets a platform independent accessor for the largest *ax register.
+            /// </summary>
+            public uint _ax
+            {
+                get { return this.Eax; }
+            }
+
+            /// <summary>
+            /// Gets Gets a platform independent accessor for the largest *bx register.
+            /// </summary>
+            public uint _bx
+            {
+                get { return this.Ebx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *cx register.
+            /// </summary>
+            public uint _cx
+            {
+                get { return this.Ecx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *dx register.
+            /// </summary>
+            public uint _dx
+            {
+                get { return this.Edx; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *sp register.
+            /// </summary>
+            public uint _sp
+            {
+                get { return this.Esp; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *bp register.
+            /// </summary>
+            public uint _bp
+            {
+                get { return this.Ebp; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *di register.
+            /// </summary>
+            public uint _di
+            {
+                get { return this.Edi; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *si register.
+            /// </summary>
+            public uint _si
+            {
+                get { return this.Esi; }
+            }
+
+            /// <summary>
+            /// Gets a platform independent accessor for the largest *ip register.
+            /// </summary>
+            public uint _ip
+            {
+                get { return this.Eip; }
+            }
         }
 #endif
 
@@ -742,8 +901,7 @@
         [StructLayout(LayoutKind.Sequential)]
         public struct OUTPUT_DEBUG_STRING_INFO
         {
-            [MarshalAs(UnmanagedType.LPStr)]
-            public string lpDebugStringData;
+            public IntPtr lpDebugStringData;
             public ushort fUnicode;
             public ushort nDebugStringLength;
         }

@@ -131,9 +131,9 @@
                     "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
 #endif
             }
-#if WIN64
-            uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx.Rip));
-            IntPtr prevInstruction = new IntPtr((long)cx.Rip - prevInstSize);
+
+            uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx._ip));
+            IntPtr prevInstruction = new IntPtr((long)cx._ip - prevInstSize);
             if (this.LogBreakpointAccesses)
             {
                 this.Status.Log(
@@ -162,38 +162,7 @@
 
                 this.RestoreBreakpointOnExceptionSingleStep = false;
             }
-#else
-            uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr(cx.Eip));
-            IntPtr prevInstruction = new IntPtr(cx.Eip - prevInstSize);
-            if (this.LogBreakpointAccesses)
-            {
-                this.Status.Log(
-                    "Modifying address is " +
-                    this.IntPtrToFormattedAddress(prevInstruction) +
-                    " with instruction length " + prevInstSize);
-            }
 
-            if (this.RestoreBreakpointOnExceptionSingleStep == true)
-            {
-                // TODO: eventually replace breakpointAddressJustHit with a check of Dr6.
-                if (this.BreakpointAddressJustHit != IntPtr.Zero)
-                {
-                    this.Write(this.BreakpointAddressJustHit, (byte)0xcc, WriteOptions.None);
-                    this.Status.Log(
-                        "Restoring breakpoint at " +
-                        this.IntPtrToFormattedAddress(this.BreakpointAddressJustHit));
-                    this.BreakpointAddressJustHit = IntPtr.Zero;
-                }
-                else
-                {
-                    this.Status.Log(
-                        "Unexpected series of events during breakpoint restoration.",
-                        Logger.Logger.Level.HIGH);
-                }
-
-                this.RestoreBreakpointOnExceptionSingleStep = false;
-            }
-#endif
             return base.OnSingleStepDebugException(ref de);
         }
 

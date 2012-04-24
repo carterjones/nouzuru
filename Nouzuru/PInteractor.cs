@@ -208,6 +208,18 @@
         }
 
         /// <summary>
+        /// Gets the name of the file referenced by the supplied hModule.
+        /// </summary>
+        /// <param name="moduleHandle">The hModule.</param>
+        /// <returns>Returns the full path to the file.</returns>
+        public string GetFileNameFromHModule(IntPtr moduleHandle)
+        {
+            StringBuilder filename = new StringBuilder(255);
+            WinApi.GetModuleFileNameEx(this.ProcHandle, moduleHandle, filename, filename.Capacity);
+            return filename.ToString();
+        }
+
+        /// <summary>
         /// Iterates through all modules in the target process and searches them for the provided function name.
         /// </summary>
         /// <param name="funcName">The name of the function that is being looked up.</param>

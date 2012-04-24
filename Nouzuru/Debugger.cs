@@ -987,22 +987,13 @@
                 }
                 else
                 {
-#if DEBUG
-                    this.Status.Log("Now debugging.", Logger.Level.NONE);
-#endif
                     this.allowedToDebug = true;
                     this.threadMayExit = false;
                 }
 
-#if DEBUG
-                this.Status.Log("ProcessThreadId: " + this.ThreadID);
-#endif
                 WinApi.ThreadAccess thread_rights =
                     WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT | WinApi.ThreadAccess.SUSPEND_RESUME;
                 IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, (uint)this.ThreadID);
-#if DEBUG
-                this.Status.Log("hThread: " + this.IntPtrToFormattedAddress(threadHandle));
-#endif
                 WinApi.CONTEXT cx = new WinApi.CONTEXT();
                 cx.ContextFlags = WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
                 WinApi.GetThreadContext(threadHandle, ref cx);
@@ -1143,7 +1134,7 @@
                     }
                 }
 
-                WinApi.WaitForDebugEvent(ref de, 100);
+                WinApi.WaitForDebugEvent(ref de, WinApi.INFINITE);
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
