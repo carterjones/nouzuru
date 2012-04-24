@@ -761,7 +761,7 @@
         /// <returns>
         /// Returns the disassembled and decomposed instructions that surround the specified address.
         /// </returns>
-        protected Auxiliary.Pair<List<string>, List<Distorm.DInst>> GetSurroundingInsts(
+        protected Tuple<List<string>, List<Distorm.DInst>> GetSurroundingInsts(
             IntPtr address, uint numBefore, uint numAfter)
         {
             long firstAddress = address.ToInt64() - (numBefore * 15);
@@ -771,7 +771,7 @@
             {
                 this.monitorLogger.Log(
                     "Unable to read the code surrounding debug exception address.", Logger.Level.MEDIUM);
-                return new Auxiliary.Pair<List<string>, List<Distorm.DInst>>();
+                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
             }
 
             List<string> disassembledInsts;
@@ -791,7 +791,7 @@
             {
                 this.monitorLogger.Log(
                     "Unable to disassemble the code surrounding debug exception address.", Logger.Level.MEDIUM);
-                return new Auxiliary.Pair<List<string>, List<Distorm.DInst>>();
+                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
             }
 
             int instIndex = -1;
@@ -809,7 +809,7 @@
                 this.monitorLogger.Log(
                     "Unable to detect valid instruction at " + this.IntPtrToFormattedAddress(address),
                     Logger.Level.MEDIUM);
-                return new Auxiliary.Pair<List<string>, List<Distorm.DInst>>();
+                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
             }
 
             uint firstIndex = (uint)instIndex - numBefore;
@@ -818,10 +818,9 @@
             List<Distorm.DInst> decomposedSurroundingInsts =
                 decomposedInsts.Skip((int)firstIndex).Take((int)(numBefore + 1 + numAfter)).ToList();
 
-            Auxiliary.Pair<List<string>, List<Distorm.DInst>> res =
-                new Auxiliary.Pair<List<string>, List<Distorm.DInst>>();
-            res.Item1 = disassembledSurroundingInsts;
-            res.Item2 = decomposedSurroundingInsts;
+            Tuple<List<string>, List<Distorm.DInst>> res = new Tuple<List<string>, List<Distorm.DInst>>(
+                disassembledSurroundingInsts,
+                decomposedSurroundingInsts);
 
             return res;
         }
@@ -922,7 +921,7 @@
         /// <returns>Returns true if the logging process was successful.</returns>
         protected bool LogSurroundingInstructions(IntPtr address, uint numBefore, uint numAfter)
         {
-            Auxiliary.Pair<List<string>, List<Distorm.DInst>> surroundingInsts =
+            Tuple<List<string>, List<Distorm.DInst>> surroundingInsts =
                 this.GetSurroundingInsts(address, numBefore, numAfter);
 
             if (surroundingInsts.Item1 == null || surroundingInsts.Item2 == null ||
