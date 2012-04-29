@@ -66,21 +66,19 @@
                 return false;
             }
 
-            Distorm.DecodeType dt =
-                (this.Is64Bit ? Distorm.DecodeType.Decode64Bits : Distorm.DecodeType.Decode32Bits);
-            Distorm.DInst[] insts = Distorm.Decompose(data, (ulong)startAddress.ToInt64(), dt);
-            if (insts.Length == 0)
+            List<Instruction> insts = this.d.DisassembleInstructions(data, startAddress);
+            if (insts.Count == 0)
             {
                 return false;
             }
 
-            for (uint i = 0; i < numInstructions && i < insts.Length; ++i)
+            for (int i = 0; i < numInstructions && i < insts.Count; ++i)
             {
-                if (!this.SetSoftBP(new IntPtr((long)insts[i].addr)))
+                if (!this.SetSoftBP(insts[i].Address))
                 {
                     this.Status.Log(
                         "Error setting breakpoint at " +
-                        this.IntPtrToFormattedAddress(new IntPtr((long)insts[i].addr)));
+                        this.IntPtrToFormattedAddress(new IntPtr((long)insts[i].Address)));
                     return false;
                 }
             }
