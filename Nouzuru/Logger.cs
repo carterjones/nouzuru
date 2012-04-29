@@ -144,7 +144,7 @@ namespace Logger
         /// <param name="t">The type of log to be written.</param>
         public static void Log(string message, string filename, Level l = Level.NONE, Type t = Type.CONSOLE)
         {
-            message = message.Trim(new char[] { '\n', '\r', ' ' }).TrimEnd(new char[] { '\t' }) + "\r\n";
+            message = message.Trim(new char[] { '\n', '\r' }).TrimEnd(new char[] { '\t', ' ' }) + "\r\n";
 
             l = Logger.GetHighestLevel(l);
 
