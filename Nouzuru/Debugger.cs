@@ -7,6 +7,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading;
+    using Bunseki;
     using Logger;
 
     /// <summary>
@@ -1066,12 +1067,15 @@
                     {
                         // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
                         this.Is64Bit = false;
+                        this.d.TargetArchitecture = Bunseki.Disassembler.Architecture.x86_32;
                     }
                     else
                     {
                         // If it is not Wow64, then the process is natively running, so set it according to the OS
                         // architecture.
                         this.Is64Bit = SysInteractor.Is64Bit;
+                        this.d.TargetArchitecture =
+                            this.Is64Bit ? Disassembler.Architecture.x86_64 : Disassembler.Architecture.x86_32;
                     }
 
                     if (!WinApi.DebugSetProcessKillOnExit(false))

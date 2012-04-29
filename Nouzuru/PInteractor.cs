@@ -5,7 +5,7 @@
     using System.Diagnostics;
     using System.Runtime.InteropServices;
     using System.Text;
-    using Distorm3cs;
+    using Bunseki;
     using Logger;
 
     /// <summary>
@@ -13,6 +13,15 @@
     /// </summary>
     public class PInteractor
     {
+        #region Fields
+
+        /// <summary>
+        /// A disassembler that can be used to disassemble code read from the target process.
+        /// </summary>
+        protected internal Disassembler d = new Disassembler();
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -21,6 +30,7 @@
         public PInteractor()
         {
             this.Status = new Logger(Logger.Type.CONSOLE | Logger.Type.FILE, Logger.Level.NONE, "nouzuru.log");
+            this.d.Engine = Disassembler.InternalDisassembler.BeaEngine;
         }
 
         #endregion
@@ -183,7 +193,7 @@
         /// <param name="from">The base address of the target range for disassembly.</param>
         /// <param name="rangeSize">The size of the range of memory that will be disassembled.</param>
         /// <returns>Returns the disassembly as a List of instructions.</returns>
-        public List<string> DisassembleAddressRange(IntPtr from, int rangeSize)
+        public List<Instruction> DisassembleAddressRange(IntPtr from, int rangeSize)
         {
             if (!this.IsOpen)
             {
@@ -191,7 +201,7 @@
                     "Unable to decompose the instructions at " + this.IntPtrToFormattedAddress(from) +
                     ", because the target process has not been opened.",
                     Logger.Level.HIGH);
-                return new List<string>();
+                return new List<Instruction>();
             }
 
             byte[] data = new byte[rangeSize];
@@ -201,10 +211,10 @@
                     "Unable to decompose the instructions at " + this.IntPtrToFormattedAddress(from) +
                     ", because the address supplied (" + this.IntPtrToFormattedAddress(from) + ") could not be read.",
                     Logger.Level.HIGH);
-                return new List<string>();
+                return new List<Instruction>();
             }
 
-            return Distorm.Disassemble(data);
+            return this.d.DisassembleInstructions(data, from);
         }
 
         /// <summary>
@@ -286,8 +296,8 @@
                 return -1;
             }
 
-            Distorm.DInst[] insts = Distorm.Decompose(data);
-            if (insts.Length < 1)
+            List<Instruction> insts = this.d.DisassembleInstructions(data, address);
+            if (insts.Count < 1)
             {
                 this.Status.Log(
                     "Unable to get the instruction size of the instruction at " +
@@ -297,7 +307,7 @@
             }
             else
             {
-                return insts[0].size;
+                return (int)insts[0].NumBytes;
             }
         }
 
@@ -511,12 +521,15 @@
                 {
                     // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
                     this.Is64Bit = false;
+                    this.d.TargetArchitecture = Disassembler.Architecture.x86_32;
                 }
                 else
                 {
                     // If it is not Wow64, then the process is natively running, so set it according to the OS
                     // architecture.
                     this.Is64Bit = SysInteractor.Is64Bit;
+                    this.d.TargetArchitecture =
+                        this.Is64Bit ? Disassembler.Architecture.x86_64 : Disassembler.Architecture.x86_32;
                 }
 
                 return true;

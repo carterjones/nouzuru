@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Distorm3cs;
+    using Bunseki;
 
     /// <summary>
     /// A type of debugger that is used for monitoring the execution flow of a process.
@@ -41,9 +41,9 @@
         {
             foreach (BasicBlock block in blocks)
             {
-                if (!this.SetSoftBP(new IntPtr((long)block.InstructionsDecomposed[0].addr)))
+                if (!this.SetSoftBP(new IntPtr((long)block.Instructions[0].Address)))
                 {
-                    Console.WriteLine("Error setting breakpoint at 0x" + block.InstructionsDecomposed[0].addr.ToString("x"));
+                    Console.WriteLine("Error setting breakpoint at 0x" + block.Instructions[0].Address.ToString("x"));
                     return false;
                 }
             }
@@ -193,13 +193,13 @@
             }
 
             // Disassemble the memory around the address.
-            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
+            List<Instruction> insts = this.d.DisassembleInstructions(buffer, beginBufAddress);
 
-            for (uint i = 0; i < insts.Length; ++i)
+            for (int i = 0; i < insts.Count; ++i)
             {
-                if (insts[i].addr >= (ulong)address.ToInt64())
+                if ((ulong)insts[i].Address.ToInt64() >= (ulong)address.ToInt64())
                 {
-                    return insts[i - 1].size;
+                    return insts[i - 1].NumBytes;
                 }
             }
 

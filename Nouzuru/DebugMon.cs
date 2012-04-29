@@ -6,7 +6,7 @@
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
-    using Distorm3cs;
+    using Bunseki;
     using Logger;
 
     /// <summary>
@@ -680,15 +680,7 @@
                 return "<instruction disassembly failed>";
             }
 
-            List<string> insts = new List<string>();
-            if (this.Is64Bit)
-            {
-                insts = Distorm.Disassemble(instData, 0, Distorm.DecodeType.Decode64Bits);
-            }
-            else
-            {
-                insts = Distorm.Disassemble(instData, 0, Distorm.DecodeType.Decode32Bits);
-            }
+            List<Instruction> insts = this.d.DisassembleInstructions(instData, IntPtr.Zero);
 
             if (insts.Count == 0)
             {
@@ -698,7 +690,7 @@
                 return "<instruction disassembly failed>";
             }
 
-            return insts[0];
+            return insts[0].ToString();
         }
 
         /// <summary>
@@ -761,8 +753,7 @@
         /// <returns>
         /// Returns the disassembled and decomposed instructions that surround the specified address.
         /// </returns>
-        protected Tuple<List<string>, List<Distorm.DInst>> GetSurroundingInsts(
-            IntPtr address, uint numBefore, uint numAfter)
+        protected List<Instruction> GetSurroundingInsts(IntPtr address, uint numBefore, uint numAfter)
         {
             long firstAddress = address.ToInt64() - (numBefore * 15);
             long readSize = (numBefore + 1 + numAfter) * 15;
@@ -771,33 +762,31 @@
             {
                 this.monitorLogger.Log(
                     "Unable to read the code surrounding debug exception address.", Logger.Level.MEDIUM);
-                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
+                return new List<Instruction>();
             }
 
-            List<string> disassembledInsts;
-            Distorm.DInst[] decomposedInsts;
+            List<Instruction> insts;
             if (this.Is64Bit)
             {
-                disassembledInsts = Distorm.Disassemble(data, (ulong)firstAddress, Distorm.DecodeType.Decode64Bits);
-                decomposedInsts = Distorm.Decompose(data, (ulong)firstAddress, Distorm.DecodeType.Decode64Bits);
+                this.d.TargetArchitecture = Disassembler.Architecture.x86_64;
             }
             else
             {
-                disassembledInsts = Distorm.Disassemble(data, (ulong)firstAddress, Distorm.DecodeType.Decode32Bits);
-                decomposedInsts = Distorm.Decompose(data, (ulong)firstAddress, Distorm.DecodeType.Decode32Bits);
+                this.d.TargetArchitecture = Disassembler.Architecture.x86_32;
             }
+            insts = this.d.DisassembleInstructions(data, (IntPtr)firstAddress);
 
-            if (disassembledInsts.Count == 0 || decomposedInsts.Length == 0)
+            if (insts.Count == 0)
             {
                 this.monitorLogger.Log(
                     "Unable to disassemble the code surrounding debug exception address.", Logger.Level.MEDIUM);
-                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
+                return new List<Instruction>();
             }
 
             int instIndex = -1;
-            for (int i = 0; i < decomposedInsts.Length; ++i)
+            for (int i = 0; i < insts.Count; ++i)
             {
-                if (decomposedInsts[i].addr == (ulong)address.ToInt64())
+                if (insts[i].Address == address)
                 {
                     instIndex = i;
                     break;
@@ -809,20 +798,14 @@
                 this.monitorLogger.Log(
                     "Unable to detect valid instruction at " + this.IntPtrToFormattedAddress(address),
                     Logger.Level.MEDIUM);
-                return new Tuple<List<string>, List<Distorm.DInst>>(new List<string>(), new List<Distorm.DInst>());
+                return new List<Instruction>();
             }
 
             uint firstIndex = (uint)instIndex - numBefore;
-            List<string> disassembledSurroundingInsts =
-                disassembledInsts.Skip((int)firstIndex).Take((int)(numBefore + 1 + numAfter)).ToList();
-            List<Distorm.DInst> decomposedSurroundingInsts =
-                decomposedInsts.Skip((int)firstIndex).Take((int)(numBefore + 1 + numAfter)).ToList();
+            List<Instruction> surroundingInsts =
+                insts.Skip((int)firstIndex).Take((int)(numBefore + 1 + numAfter)).ToList();
 
-            Tuple<List<string>, List<Distorm.DInst>> res = new Tuple<List<string>, List<Distorm.DInst>>(
-                disassembledSurroundingInsts,
-                decomposedSurroundingInsts);
-
-            return res;
+            return surroundingInsts;
         }
 
         /// <summary>
@@ -921,22 +904,19 @@
         /// <returns>Returns true if the logging process was successful.</returns>
         protected bool LogSurroundingInstructions(IntPtr address, uint numBefore, uint numAfter)
         {
-            Tuple<List<string>, List<Distorm.DInst>> surroundingInsts =
-                this.GetSurroundingInsts(address, numBefore, numAfter);
+            List<Instruction> surroundingInsts = this.GetSurroundingInsts(address, numBefore, numAfter);
 
-            if (surroundingInsts.Item1 == null || surroundingInsts.Item2 == null ||
-                surroundingInsts.Item1.Count == 0 || surroundingInsts.Item2.Count == 0)
+            if (surroundingInsts.Count == 0)
             {
                 return false;
             }
 
-            for (int i = 0; i < surroundingInsts.Item1.Count; ++i)
+            for (int i = 0; i < surroundingInsts.Count; ++i)
             {
                 string currentAddress =
-                    this.IntPtrToFormattedAddress(new IntPtr((long)surroundingInsts.Item2[i].addr));
-                string disassembledInst = surroundingInsts.Item1[i];
+                    this.IntPtrToFormattedAddress(new IntPtr((long)surroundingInsts[i].Address));
                 string spacer = string.Empty;
-                if (surroundingInsts.Item2[i].addr == (ulong)address.ToInt64())
+                if ((ulong)surroundingInsts[i].Address == (ulong)address)
                 {
                     spacer = "> ";
                 }
@@ -945,7 +925,7 @@
                     spacer = "  ";
                 }
 
-                this.monitorLogger.Log(spacer + currentAddress + " - " + disassembledInst);
+                this.monitorLogger.Log(spacer + currentAddress + " - " + surroundingInsts[i]);
             }
 
             return true;
