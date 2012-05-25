@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
+    using System.Diagnostics;
 
     /// <summary>
     /// A collection of extension methods that add extra functionality to existing .NET classes.
@@ -34,6 +35,15 @@
             Marshal.FreeHGlobal(ptr);
 
             return arr;
+        }
+
+        internal static bool HasExitedSafe(this Process p)
+        {
+            FILETIME create, exit, kernel, user;
+            IntPtr handle = WinApi.OpenProcess(WinApi.ProcessRights.QUERY_LIMITED_INFORMATION, false, (uint)p.Id);
+            WinApi.GetProcessTimes(handle, out create, out exit, out kernel, out user);
+            WinApi.CloseHandle(handle);
+            return (exit.dwHighDateTime != 0) && (exit.dwLowDateTime != 0);
         }
     }
 }
