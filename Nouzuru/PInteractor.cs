@@ -65,7 +65,12 @@
         {
             get
             {
-                return (this.Proc != null) && (this.Proc.Id != 0) && !this.Proc.HasExited;
+                return
+                    (this.ProcHandle != IntPtr.Zero) &&
+                    (this.Proc != null) &&
+                    (this.Proc.Id != 0) &&
+                    !this.Proc.HasExitedSafe() &&
+                    (this.EntryPointAddress != IntPtr.Zero);
             }
         }
 
