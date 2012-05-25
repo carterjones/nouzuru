@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Runtime.InteropServices;
     using System.Text;
@@ -92,7 +93,43 @@
             {
                 if (this.Proc != null)
                 {
-                    return this.Proc.MainModule.BaseAddress;
+                    try
+                    {
+                        return this.Proc.MainModule.BaseAddress;
+                    }
+                    catch (Win32Exception)
+                    {
+                        return IntPtr.Zero;
+                    }
+                    catch (NullReferenceException)
+                    {
+                        return IntPtr.Zero;
+                    }
+                }
+                else
+                {
+                    return IntPtr.Zero;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the entry point address of the target process.
+        /// </summary>
+        public IntPtr EntryPointAddress
+        {
+            get
+            {
+                if (this.Proc != null)
+                {
+                    try
+                    {
+                        return this.Proc.MainModule.EntryPointAddress;
+                    }
+                    catch (Win32Exception)
+                    {
+                        return IntPtr.Zero;
+                    }
                 }
                 else
                 {
@@ -198,7 +235,7 @@
         /// <param name="from">The base address of the target range for disassembly.</param>
         /// <param name="rangeSize">The size of the range of memory that will be disassembled.</param>
         /// <returns>Returns the disassembly as a List of instructions.</returns>
-        public List<Instruction> DisassembleAddressRange(IntPtr from, int rangeSize)
+        public List<Instruction> DisassembleAddressRange(IntPtr from, long rangeSize)
         {
             if (!this.IsOpen)
             {
@@ -518,7 +555,11 @@
                 }
 
                 bool isWow64;
-                WinApi.IsWow64Process(this.ProcHandle, out isWow64);
+                if (!WinApi.IsWow64Process(this.ProcHandle, out isWow64))
+                {
+                    this.Status.Log(
+                        "Unable to determine bitness of process: " + this.Proc.ProcessName, Logger.Level.HIGH);
+                }
 
                 // 64-bit process detection.
                 // Note: This does not take into account for PAE. No plans to support PAE currently exist.
@@ -539,9 +580,11 @@
 
                 return true;
             }
-
-            this.Status.Log("Unable to open the target process.", Logger.Level.HIGH);
-            return false;
+            else
+            {
+                this.Status.Log("Unable to open the target process.", Logger.Level.HIGH);
+                return false;
+            }
         }
 
         /// <summary>
