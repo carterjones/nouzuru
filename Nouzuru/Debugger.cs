@@ -57,6 +57,19 @@
 
         #endregion
 
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the Debugger class.
+        /// </summary>
+        public Debugger()
+            : base()
+        {
+            this.DebugEventTimeout = WinApi.INFINITE;
+        }
+
+        #endregion
+
         #region Destructors
 
         /// <summary>
@@ -158,6 +171,11 @@
         /// is hit.
         /// </summary>
         public bool LogRegistersOnBreakpoint { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of milliseconds that WaitForDebugEvent() will wait for a debug event.
+        /// </summary>
+        public uint DebugEventTimeout { get; set; }
 
         #endregion
 
@@ -1138,7 +1156,7 @@
                     }
                 }
 
-                WinApi.WaitForDebugEvent(ref de, WinApi.INFINITE);
+                WinApi.WaitForDebugEvent(ref de, this.DebugEventTimeout);
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
