@@ -50,6 +50,11 @@
         private ManualResetEvent secondChanceExceptionLock = new ManualResetEvent(false);
 
         /// <summary>
+        /// Gets a value indicating where or not the debugger is paused.
+        /// </summary>
+        public bool IsPaused { get; private set; }
+
+        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
@@ -187,6 +192,7 @@
         public void ContinueDebugging()
         {
             this.secondChanceExceptionLock.Set();
+            this.IsPaused = false;
         }
 
         /// <summary>
@@ -446,6 +452,10 @@
 
             if (this.debugThread != null)
             {
+                // Unblock the thread, if a second chance exception has occured.
+                this.ContinueDebugging();
+
+                // Wait for the thread to terminate.
                 while (this.debugThread.IsAlive && !this.threadMayExit)
                 {
                 }
@@ -1262,6 +1272,7 @@
                         if (this.BlockOnSecondChanceException)
                         {
                             this.secondChanceExceptionLock.Reset();
+                            this.IsPaused = true;
                             this.secondChanceExceptionLock.WaitOne();
                         }
 
