@@ -339,10 +339,10 @@
         [DllImport("kernel32.dll")]
         public static extern bool GetProcessTimes(
             IntPtr hProcess,
-            out FILETIME lpCreationTime,
-            out FILETIME lpExitTime,
-            out FILETIME lpKernelTime,
-            out FILETIME lpUserTime);
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpCreationTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpExitTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpKernelTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpUserTime);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);

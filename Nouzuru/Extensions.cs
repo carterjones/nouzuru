@@ -39,7 +39,7 @@
 
         internal static bool HasExitedSafe(this Process p)
         {
-            FILETIME create, exit, kernel, user;
+            System.Runtime.InteropServices.ComTypes.FILETIME create, exit, kernel, user;
             IntPtr handle = WinApi.OpenProcess(WinApi.ProcessRights.QUERY_LIMITED_INFORMATION, false, (uint)p.Id);
             WinApi.GetProcessTimes(handle, out create, out exit, out kernel, out user);
             WinApi.CloseHandle(handle);
