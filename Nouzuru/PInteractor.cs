@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Diagnostics;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
     using Bunseki;
@@ -256,7 +257,7 @@
                 return new List<Instruction>();
             }
 
-            return this.d.DisassembleInstructions(data, from);
+            return this.d.DisassembleInstructions(data, from).ToList();
         }
 
         /// <summary>
@@ -338,7 +339,7 @@
                 return -1;
             }
 
-            List<Instruction> insts = this.d.DisassembleInstructions(data, address);
+            List<Instruction> insts = this.d.DisassembleInstructions(data, address).ToList();
             if (insts.Count < 1)
             {
                 this.Status.Log(

@@ -66,7 +66,7 @@
                 return false;
             }
 
-            List<Instruction> insts = this.d.DisassembleInstructions(data, startAddress);
+            List<Instruction> insts = this.d.DisassembleInstructions(data, startAddress).ToList();
             if (insts.Count == 0)
             {
                 return false;
@@ -183,7 +183,7 @@
             }
 
             // Disassemble the memory around the address.
-            List<Instruction> insts = this.d.DisassembleInstructions(buffer, beginBufAddress);
+            List<Instruction> insts = this.d.DisassembleInstructions(buffer, beginBufAddress).ToList();
 
             for (int i = 0; i < insts.Count; ++i)
             {

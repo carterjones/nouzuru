@@ -172,7 +172,7 @@
                 }
 
                 currentPage.Instructions =
-                    BasicBlock.d.DisassembleInstructions(currentPage.Data, currentPage.Address);
+                    BasicBlock.d.DisassembleInstructions(currentPage.Data, currentPage.Address).ToList();
                 if (currentPage.Instructions.Count == 0)
                 {
                     return new BasicBlock();

@@ -680,7 +680,7 @@
                 return "<instruction disassembly failed>";
             }
 
-            List<Instruction> insts = this.d.DisassembleInstructions(instData, IntPtr.Zero);
+            List<Instruction> insts = this.d.DisassembleInstructions(instData, IntPtr.Zero).ToList();
 
             if (insts.Count == 0)
             {
@@ -774,7 +774,7 @@
             {
                 this.d.TargetArchitecture = Disassembler.Architecture.x86_32;
             }
-            insts = this.d.DisassembleInstructions(data, (IntPtr)firstAddress);
+            insts = this.d.DisassembleInstructions(data, (IntPtr)firstAddress).ToList();
 
             if (insts.Count == 0)
             {
