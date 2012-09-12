@@ -40,12 +40,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\plugins\distorm3cs\Distorm3cs\Distorm3cs.csproj">
-      <Project>{27C84C77-6F54-481F-8598-639AC768753D}</Project>
-      <Name>Distorm3cs</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Include="Address.cs" />
     <Compile Include="Auxiliary.cs" />
     <Compile Include="BasicBlock.cs" />
@@ -65,6 +59,12 @@
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\bunseki\Bunseki\Bunseki.csproj">
+      <Project>{AF903833-3F53-42BC-ADA1-797D9709EA3C}</Project>
+      <Name>Bunseki</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
