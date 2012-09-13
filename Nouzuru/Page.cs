@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using Distorm3cs;
+    using Bunseki;
 
     /// <summary>
     /// Represents a memory page.
@@ -20,14 +20,9 @@
         public byte[] Data { get; set; }
 
         /// <summary>
-        /// Gets or sets the decomposed instructions found within the memory page.
+        /// Gets or sets the instructions found within the memory page.
         /// </summary>
-        public Distorm.DInst[] InstructionsDecomposed { get; set; }
-
-        /// <summary>
-        /// Gets or sets the disassembled instructions found within the memory page.
-        /// </summary>
-        public List<string> InstructionsDisassembled { get; set; }
+        public List<Instruction> Instructions { get; set; }
 
         /// <summary>
         /// Gets the size of the memory page.

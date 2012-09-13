@@ -5,7 +5,7 @@
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
-    using Distorm3cs;
+    using Bunseki;
 
     /// <summary>
     /// A basic block of instructions that contain, at most, one instruction that affects the flow of code.
@@ -20,6 +20,8 @@
         /// </summary>
         private static ulong numBlocksMade = 0;
 
+        private static Disassembler d = new Disassembler();
+
         #endregion
 
         #region Constructors
@@ -29,8 +31,7 @@
         /// </summary>
         public BasicBlock()
         {
-            this.InstructionsDecomposed = new List<Distorm.DInst>();
-            this.InstructionsDisassembled = new List<string>();
+            this.Instructions = new List<Instruction>();
             this.Previous = new List<BasicBlock>();
             this.Next = new List<BasicBlock>();
             this.ID = numBlocksMade++;
@@ -41,14 +42,9 @@
         #region Properties
 
         /// <summary>
-        /// Gets or sets the list of decomposed instructions in this basic block.
+        /// Gets or sets the list of instructions in this basic block.
         /// </summary>
-        public List<Distorm.DInst> InstructionsDecomposed { get; set; }
-
-        /// <summary>
-        /// Gets or sets the list of disassembled instructions in this basic block.
-        /// </summary>
-        public List<string> InstructionsDisassembled { get; set; }
+        public List<Instruction> Instructions { get; set; }
 
         /// <summary>
         /// Gets or sets a list of basic blocks that connects to this basic block.
@@ -136,7 +132,7 @@
             // If a block at this address already exists, return that block.
             foreach (BasicBlock b in blocks)
             {
-                if (b.InstructionsDecomposed[0].addr == (ulong)baseAddress.ToInt64())
+                if (b.Instructions[0].Address == baseAddress)
                 {
                     return b;
                 }
@@ -175,16 +171,9 @@
                     return new BasicBlock();
                 }
 
-                currentPage.InstructionsDecomposed =
-                    Distorm.Decompose(currentPage.Data, (ulong)currentPage.Address.ToInt64());
-                if (currentPage.InstructionsDecomposed.Length == 0)
-                {
-                    return new BasicBlock();
-                }
-
-                currentPage.InstructionsDisassembled =
-                    Distorm.Disassemble(currentPage.Data, (ulong)currentPage.Address.ToInt64());
-                if (currentPage.InstructionsDisassembled.Count == 0)
+                currentPage.Instructions =
+                    BasicBlock.d.DisassembleInstructions(currentPage.Data, currentPage.Address).ToList();
+                if (currentPage.Instructions.Count == 0)
                 {
                     return new BasicBlock();
                 }
@@ -193,21 +182,21 @@
             }
 
             int i = 0;
-            for (; i < currentPage.InstructionsDecomposed.Length; ++i)
+            for (; i < currentPage.Instructions.Count; ++i)
             {
-                if (currentPage.InstructionsDecomposed[i].addr == (ulong)baseAddress.ToInt64())
+                if (currentPage.Instructions[i].Address == baseAddress)
                 {
                     // Break once the instruction has been found.
                     break;
                 }
-                else if (currentPage.InstructionsDecomposed[i].addr > (ulong)baseAddress.ToInt64())
+                else if ((ulong)currentPage.Instructions[i].Address > (ulong)baseAddress)
                 {
-                    Console.WriteLine("Disassembly failed for address: 0x" + currentPage.InstructionsDecomposed[i].addr.ToString("x").PadLeft(8, '0'));
+                    Console.WriteLine("Disassembly failed for address: 0x" + currentPage.Instructions[i].Address.ToString("x").PadLeft(8, '0'));
                     return new BasicBlock();
                 }
             }
 
-            if (i >= currentPage.InstructionsDecomposed.Length)
+            if (i >= currentPage.Instructions.Count)
             {
                 Console.WriteLine("Need to use scanner to identify and decompose regions, rather than single pages.");
                 return new BasicBlock();
@@ -215,16 +204,15 @@
 
             // Verify that no control flow instructions are added in the middle of a basic block.
             while (
-                !(currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL &&
-                  currentPage.InstructionsDecomposed[i].ops[0].type == Distorm.OperandType.PC) &&
-                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.CND_BRANCH &&
-                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.RET &&
-                currentPage.InstructionsDecomposed[i].FlowControlFlags != Distorm.FlowControl.UNC_BRANCH)
+                // TODO: verify this still works after adjusting the call verification logic.
+                currentPage.Instructions[i].FlowType != Instruction.ControlFlow.Call &&
+                currentPage.Instructions[i].FlowType != Instruction.ControlFlow.ConditionalBranch &&
+                currentPage.Instructions[i].FlowType != Instruction.ControlFlow.Return &&
+                currentPage.Instructions[i].FlowType != Instruction.ControlFlow.UnconditionalBranch)
             {
                 // Add the non-control-modifying instructions.
-                block.InstructionsDecomposed.Add(currentPage.InstructionsDecomposed[i]);
-                block.InstructionsDisassembled.Add(currentPage.InstructionsDisassembled[i++]);
-                if (i >= currentPage.InstructionsDecomposed.Length)
+                block.Instructions.Add(currentPage.Instructions[i++]);
+                if (i >= currentPage.Instructions.Count)
                 {
                     Console.WriteLine("Need to use scanner to identify and decompose regions, rather than single pages.");
                     return new BasicBlock();
@@ -232,11 +220,10 @@
             }
 
             // Add the control-modifying instruction.
-            block.InstructionsDecomposed.Add(currentPage.InstructionsDecomposed[i]);
-            block.InstructionsDisassembled.Add(currentPage.InstructionsDisassembled[i]);
+            block.Instructions.Add(currentPage.Instructions[i]);
 
             // End parsing if this is the end of the block.
-            if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.RET)
+            if (currentPage.Instructions[i].FlowType == Instruction.ControlFlow.Return)
             {
                 return block;
             }
@@ -245,39 +232,39 @@
             BasicBlock branchBlock;
             if (maxDepth == -1 || currentDepth <= maxDepth)
             {
-                // This handles CND_BRANCH, UNC_BRANCH, and CALL (only CALLs with PC operand types).
-                if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL &&
-                    currentPage.InstructionsDecomposed[i].ops[0].type == Distorm.OperandType.PC)
+                // TODO: verify this still works after adjusting the call verification logic.
+                // This handles CND_BRANCH, UNC_BRANCH, and CALL.
+                if (currentPage.Instructions[i].FlowType == Instruction.ControlFlow.Call)
                 {
                     branchBlock = blocks.FirstOrDefault(
-                        x => x.InstructionsDecomposed.Count > 0 &&
-                             x.InstructionsDecomposed[0].addr == currentPage.InstructionsDecomposed[i].BranchTarget);
+                        x => x.Instructions.Count > 0 &&
+                             x.Instructions[0].Address == currentPage.Instructions[i].BranchTarget);
                     if (branchBlock == null)
                     {
                         // Do not expand calls. Add a stub block, instead.
                         branchBlock = new BasicBlock();
-                        Distorm.DInst inst = new Distorm.DInst();
-                        inst.addr = currentPage.InstructionsDecomposed[i].BranchTarget;
-                        branchBlock.InstructionsDecomposed.Add(inst);
-                        branchBlock.InstructionsDisassembled.Add("...");
+
+                        // TODO: verify that creating an invalid instruction works.
+                        branchBlock.Instructions.Add(
+                            Instruction.CreateInvalidInstruction(currentPage.Instructions[i].BranchTarget));
                         blocks.Add(branchBlock);
                     }
                 }
                 else
                 {
                     branchBlock = GenerateBlock(
-                        p, new IntPtr((long)currentPage.InstructionsDecomposed[i].BranchTarget), ref blocks, ref pages, maxDepth, currentDepth + 1);
+                        p, new IntPtr((long)currentPage.Instructions[i].BranchTarget), ref blocks, ref pages, maxDepth, currentDepth + 1);
                 }
 
                 block.Next.Add(branchBlock);
                 branchBlock.Previous.Add(block);
             }
 
-            if (currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CND_BRANCH ||
-                currentPage.InstructionsDecomposed[i].FlowControlFlags == Distorm.FlowControl.CALL)
+            if (currentPage.Instructions[i].FlowType == Instruction.ControlFlow.ConditionalBranch ||
+                currentPage.Instructions[i].FlowType == Instruction.ControlFlow.Call)
             {
                 BasicBlock nextBlock = GenerateBlock(
-                    p, new IntPtr((long)currentPage.InstructionsDecomposed[++i].addr), ref blocks, ref pages, maxDepth, currentDepth);
+                    p, new IntPtr((long)currentPage.Instructions[++i].Address), ref blocks, ref pages, maxDepth, currentDepth);
                 block.Next.Add(nextBlock);
                 nextBlock.Previous.Add(block);
             }
@@ -304,12 +291,13 @@
             foreach (BasicBlock block in blocksCombo)
             {
                 IEnumerable<BasicBlock> connections =
-                    blocksCombo.Where(x => x.InstructionsDecomposed[0].addr == block.InstructionsDecomposed[0].addr);
+                    blocksCombo.Where(x => x.Instructions[0].Address == block.Instructions[0].Address);
                 int numConnections = connections.Count();
                 if (numConnections > 1)
                 {
+                    // TODO: fix this check:
                     IEnumerable<BasicBlock> expanded =
-                        connections.Where(x => !x.InstructionsDisassembled[0].Equals("..."));
+                        connections.Where(x => !x.Instructions[0].Equals("..."));
                     int numExpanded = expanded.Count();
                     BasicBlock chosenBlock;
                     if (numExpanded == 0)
@@ -385,13 +373,13 @@
             // Create node.
             sb.Append("node" + this.ID + "[label=<");
             sb.Append("<table border=\"0\" cellborder=\"0\" cellspacing=\"0\" cellpadding=\"0\"><tr><td>");
-            if (this.InstructionsDecomposed.Count > 0)
+            if (this.Instructions.Count > 0)
             {
-                sb.Append("0x" + this.InstructionsDecomposed[0].addr.ToString("x").PadLeft(8, '0') + ":");
+                sb.Append("0x" + this.Instructions[0].Address.ToString("x").PadLeft(8, '0') + ":");
                 sb.Append("<br align=\"left\" />");
             }
 
-            foreach (string inst in this.InstructionsDisassembled)
+            foreach (Instruction inst in this.Instructions)
             {
                 sb.Append(inst);
                 sb.Append("<br align=\"left\" />");
@@ -420,22 +408,21 @@
             foreach (BasicBlock blockA in orderedBlocks)
             {
                 // Only look at blocks where there are more than 1 instruction.
-                if (blockA.InstructionsDecomposed.Count > 1)
+                if (blockA.Instructions.Count > 1)
                 {
                     // Look at all instructions after the first instruction.
-                    foreach (Distorm.DInst inst in blockA.InstructionsDecomposed.Skip(1))
+                    foreach (Instruction inst in blockA.Instructions.Skip(1))
                     {
                         // Look at the first instruction of all other blocks.
                         IEnumerable<BasicBlock> otherBlocks = orderedBlocks.Where(x => x.ID != blockA.ID);
                         BasicBlock blockFound =
-                            otherBlocks.FirstOrDefault(x => x.InstructionsDecomposed[0].addr == inst.addr);
+                            otherBlocks.FirstOrDefault(x => x.Instructions[0].Address == inst.Address);
                         if (blockFound != null)
                         {
                             // Delete the current instruction and all after, within the current block.
-                            blockA.InstructionsDecomposed.RemoveAll(
-                                x => x.addr >= blockFound.InstructionsDecomposed[0].addr);
-                            blockA.InstructionsDisassembled =
-                                blockA.InstructionsDisassembled.Take(blockA.InstructionsDecomposed.Count).ToList();
+                            blockA.Instructions.RemoveAll(
+                                x => (ulong)x.Address >= (ulong)blockFound.Instructions[0].Address);
+                            blockA.Instructions = blockA.Instructions.Take(blockA.Instructions.Count).ToList();
 
                             // Set the fall-through block to the block that was found.
                             blockA.Next.Clear();

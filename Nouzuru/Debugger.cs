@@ -7,6 +7,7 @@
     using System.Runtime.InteropServices;
     using System.Text;
     using System.Threading;
+    using Bunseki;
     using Logger;
 
     /// <summary>
@@ -49,10 +50,28 @@
         private ManualResetEvent secondChanceExceptionLock = new ManualResetEvent(false);
 
         /// <summary>
+        /// Gets a value indicating where or not the debugger is paused.
+        /// </summary>
+        public bool IsPaused { get; private set; }
+
+        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
         private bool threadMayExit = true;
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Initializes a new instance of the Debugger class.
+        /// </summary>
+        public Debugger()
+            : base()
+        {
+            this.DebugEventTimeout = WinApi.INFINITE;
+        }
 
         #endregion
 
@@ -158,6 +177,11 @@
         /// </summary>
         public bool LogRegistersOnBreakpoint { get; set; }
 
+        /// <summary>
+        /// Gets or sets the number of milliseconds that WaitForDebugEvent() will wait for a debug event.
+        /// </summary>
+        public uint DebugEventTimeout { get; set; }
+
         #endregion
 
         #region Methods
@@ -168,6 +192,7 @@
         public void ContinueDebugging()
         {
             this.secondChanceExceptionLock.Set();
+            this.IsPaused = false;
         }
 
         /// <summary>
@@ -427,6 +452,10 @@
 
             if (this.debugThread != null)
             {
+                // Unblock the thread, if a second chance exception has occured.
+                this.ContinueDebugging();
+
+                // Wait for the thread to terminate.
                 while (this.debugThread.IsAlive && !this.threadMayExit)
                 {
                 }
@@ -1066,12 +1095,15 @@
                     {
                         // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
                         this.Is64Bit = false;
+                        this.d.TargetArchitecture = Bunseki.Disassembler.Architecture.x86_32;
                     }
                     else
                     {
                         // If it is not Wow64, then the process is natively running, so set it according to the OS
                         // architecture.
                         this.Is64Bit = SysInteractor.Is64Bit;
+                        this.d.TargetArchitecture =
+                            this.Is64Bit ? Disassembler.Architecture.x86_64 : Disassembler.Architecture.x86_32;
                     }
 
                     if (!WinApi.DebugSetProcessKillOnExit(false))
@@ -1134,7 +1166,7 @@
                     }
                 }
 
-                WinApi.WaitForDebugEvent(ref de, WinApi.INFINITE);
+                WinApi.WaitForDebugEvent(ref de, this.DebugEventTimeout);
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
@@ -1240,6 +1272,7 @@
                         if (this.BlockOnSecondChanceException)
                         {
                             this.secondChanceExceptionLock.Reset();
+                            this.IsPaused = true;
                             this.secondChanceExceptionLock.WaitOne();
                         }
 

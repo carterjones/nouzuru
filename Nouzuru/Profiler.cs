@@ -4,19 +4,14 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
-    using Distorm3cs;
+    using Bunseki;
 
     /// <summary>
     /// A type of debugger that is used for monitoring the execution flow of a process.
     /// </summary>
-    public class Profiler : Debugger
+    public class Profiler : DebugMon
     {
         #region Properties
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the initial breakpoint has been hit.
-        /// </summary>
-        public bool InitialBreakpointHit { get; protected set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether a value should be restored when a single step exception is hit.
@@ -41,9 +36,49 @@
         {
             foreach (BasicBlock block in blocks)
             {
-                if (!this.SetSoftBP(new IntPtr((long)block.InstructionsDecomposed[0].addr)))
+                if (!this.SetSoftBP(new IntPtr((long)block.Instructions[0].Address)))
                 {
-                    Console.WriteLine("Error setting breakpoint at 0x" + block.InstructionsDecomposed[0].addr.ToString("x"));
+                    Console.WriteLine("Error setting breakpoint at 0x" + block.Instructions[0].Address.ToString("x"));
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Sets a soft breakpoint in the target starting at the supplied address for the specified number of
+        /// instructions.
+        /// </summary>
+        /// <param name="startAddress">The first address at which a breakpoint will be set.</param>
+        /// <param name="numInstructions">The number of instructions on which breakpoints will be set.</param>
+        /// <returns>Returns true if the breakpoints were successfully set.</returns>
+        public bool SetBreakpoints(IntPtr startAddress, uint numInstructions)
+        {
+            if (numInstructions == 0)
+            {
+                return true;
+            }
+
+            byte[] data = new byte[numInstructions*15];
+            if (!this.Read(startAddress, data))
+            {
+                return false;
+            }
+
+            List<Instruction> insts = this.d.DisassembleInstructions(data, startAddress).ToList();
+            if (insts.Count == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < numInstructions && i < insts.Count; ++i)
+            {
+                if (!this.SetSoftBP(insts[i].Address))
+                {
+                    this.Status.Log(
+                        "Error setting breakpoint at " +
+                        this.IntPtrToFormattedAddress(new IntPtr((long)insts[i].Address)));
                     return false;
                 }
             }
@@ -59,11 +94,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            if (!this.InitialBreakpointHit)
-            {
-                this.InitialBreakpointHit = true;
-            }
-            else
+            if (this.InitialBreakpointHit)
             {
                 this.Restore(de.Exception.ExceptionRecord.ExceptionAddress, false);
                 this.SetIP(de.Exception.ExceptionRecord.ExceptionAddress);
@@ -83,53 +114,12 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected override WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            WinApi.ThreadAccess thread_rights =
-                WinApi.ThreadAccess.SET_CONTEXT | WinApi.ThreadAccess.GET_CONTEXT | WinApi.ThreadAccess.SUSPEND_RESUME;
-            WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            IntPtr threadHandle = WinApi.OpenThread(thread_rights, false, de.dwThreadId);
-            WinApi.SuspendThread(threadHandle);
-#if WIN64
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-#else
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL | WinApi.CONTEXT_FLAGS.FLOATING_POINT |
-                WinApi.CONTEXT_FLAGS.EXTENDED_REGISTERS | WinApi.CONTEXT_FLAGS.DEBUG_REGISTERS;
-#endif
-            WinApi.GetThreadContext(threadHandle, ref cx);
-            WinApi.ResumeThread(threadHandle);
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            this.BeginEditThread(de.dwThreadId, out threadHandle, out cx);
             if (this.LogRegistersOnBreakpoint)
             {
-#if WIN64
-                this.Status.Log(
-                    "rax:" + cx.Rax.ToString("X").PadLeft(16, '0') +
-                    "rbx:" + cx.Rbx.ToString("X").PadLeft(16, '0') +
-                    "rcx:" + cx.Rcx.ToString("X").PadLeft(16, '0') +
-                    "rdx:" + cx.Rdx.ToString("X").PadLeft(16, '0') +
-                    "rip:" + cx.Rip.ToString("X").PadLeft(16, '0') +
-                    "rbp:" + cx.Rbp.ToString("X").PadLeft(16, '0'));
-                this.Status.Log(
-                    "dr0:" + cx.Dr0.ToString("X").PadLeft(16, '0') +
-                    "dr1:" + cx.Dr1.ToString("X").PadLeft(16, '0') +
-                    "dr2:" + cx.Dr2.ToString("X").PadLeft(16, '0') +
-                    "dr3:" + cx.Dr3.ToString("X").PadLeft(16, '0') +
-                    "dr6:" + cx.Dr6.ToString("X").PadLeft(16, '0') +
-                    "dr7:" + cx.Dr7.ToString("X").PadLeft(16, '0'));
-#else
-                this.Status.Log(
-                    "eax:" + cx.Eax.ToString("X").PadLeft(8, '0') +
-                    "ebx:" + cx.Ebx.ToString("X").PadLeft(8, '0') +
-                    "ecx:" + cx.Ecx.ToString("X").PadLeft(8, '0') +
-                    "edx:" + cx.Edx.ToString("X").PadLeft(8, '0') +
-                    "eip:" + cx.Eip.ToString("X").PadLeft(8, '0') +
-                    "ebp:" + cx.Ebp.ToString("X").PadLeft(8, '0'));
-                this.Status.Log(
-                    "dr0:" + cx.Dr0.ToString("X").PadLeft(8, '0') +
-                    "dr1:" + cx.Dr1.ToString("X").PadLeft(8, '0') +
-                    "dr2:" + cx.Dr2.ToString("X").PadLeft(8, '0') +
-                    "dr3:" + cx.Dr3.ToString("X").PadLeft(8, '0') +
-                    "dr6:" + cx.Dr6.ToString("X").PadLeft(8, '0') +
-                    "dr7:" + cx.Dr7.ToString("X").PadLeft(8, '0'));
-#endif
+                this.LogRegisters(ref cx);
             }
 
             uint prevInstSize = this.GetPreviousInstructionSize(new IntPtr((long)cx._ip));
@@ -193,13 +183,13 @@
             }
 
             // Disassemble the memory around the address.
-            Distorm.DInst[] insts = Distorm.Decompose(buffer, (uint)beginBufAddress.ToInt64());
+            List<Instruction> insts = this.d.DisassembleInstructions(buffer, beginBufAddress).ToList();
 
-            for (uint i = 0; i < insts.Length; ++i)
+            for (int i = 0; i < insts.Count; ++i)
             {
-                if (insts[i].addr >= (ulong)address.ToInt64())
+                if ((ulong)insts[i].Address.ToInt64() >= (ulong)address.ToInt64())
                 {
-                    return insts[i - 1].size;
+                    return insts[i - 1].NumBytes;
                 }
             }
 

@@ -27,6 +27,7 @@
         #region Constants
 
         public static uint INFINITE = 0xFFFFFFFF;
+        public static uint WM_CLOSE = 0x0010;
 
         #endregion
 
@@ -275,6 +276,17 @@
             [In] ref STARTUPINFO lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr FindWindow(IntPtr lpClassName, string lpWindowName);
+
+        public static IntPtr FindWindow(string lpWindowName)
+        {
+            return WinApi.FindWindow(IntPtr.Zero, lpWindowName);
+        }
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr CreateRemoteThread(
             IntPtr hProcess,
@@ -284,6 +296,9 @@
             IntPtr lpParameter,
             uint dwCreationFlags,
             out uint lpThreadId);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool DebugActiveProcess(uint dwProcessId);
@@ -320,6 +335,14 @@
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern uint GetProcessId(IntPtr hProcess);
+
+        [DllImport("kernel32.dll")]
+        public static extern bool GetProcessTimes(
+            IntPtr hProcess,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpCreationTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpExitTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpKernelTime,
+            out System.Runtime.InteropServices.ComTypes.FILETIME lpUserTime);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern void GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
