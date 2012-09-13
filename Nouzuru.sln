@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeaEngineCS", "plugins\buns
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Distorm3cs", "plugins\bunseki\plugins\distorm3cs\Distorm3cs\Distorm3cs.csproj", "{27C84C77-6F54-481F-8598-639AC768753D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DebuggerCLI", "DebuggerCLI\DebuggerCLI.csproj", "{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -49,6 +51,14 @@ Global
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x64.Build.0 = Release|x64
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x86.ActiveCfg = Release|x86
 		{27C84C77-6F54-481F-8598-639AC768753D}.Release|x86.Build.0 = Release|x86
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Debug|x64.ActiveCfg = Debug|x64
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Debug|x64.Build.0 = Debug|x64
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Debug|x86.ActiveCfg = Debug|x86
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Debug|x86.Build.0 = Debug|x86
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Release|x64.ActiveCfg = Release|x64
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Release|x64.Build.0 = Release|x64
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Release|x86.ActiveCfg = Release|x86
+		{CC9A45A0-4F1A-4B91-A40A-CE1CBE855A23}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
