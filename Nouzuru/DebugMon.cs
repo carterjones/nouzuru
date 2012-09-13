@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Runtime.InteropServices;
     using System.Text;
+    using System.Threading;
     using Bunseki;
     using Logger;
 
@@ -143,6 +144,19 @@
         #endregion
 
         #region Methods
+
+        /// <summary>
+        /// Wait until the initial breakpoint has been hit.
+        /// </summary>
+        public void WaitUntilInitialBreakpointIsHit()
+        {
+            while (!this.InitialBreakpointHit)
+            {
+                Thread.Sleep(1);
+            }
+
+            return;
+        }
 
         #region Events
 
