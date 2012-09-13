@@ -6,10 +6,8 @@
 !*.settings
 !*.sln
 !*.vcxproj
+!DebuggerCLI
 !Nouzuru
-!Nouzuru/Properties
 !README.md
-!plugins
-!plugins/bunseki
 !Tests
 !LICENSE
