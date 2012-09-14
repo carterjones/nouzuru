@@ -168,6 +168,11 @@
         }
 
         /// <summary>
+        /// Stores a value indicating whether the target application is paused.
+        /// </summary>
+        public bool IsTargetPaused { get; private set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether breakpoint accesses will be logged.
         /// </summary>
         public bool LogBreakpointAccesses { get; set; }
@@ -527,17 +532,19 @@
 
         public bool Pause()
         {
-            return WinApi.DebugBreakProcess(this.Proc.Handle);
+            this.IsTargetPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
+            return this.IsDebuggerPaused;
         }
 
         public void Resume()
         {
             this.ContinueDebugging();
+            this.IsTargetPaused = false;
         }
 
         public void StepInto()
         {
-            if (!this.IsDebuggerPaused)
+            if (!this.IsTargetPaused)
             {
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
@@ -545,7 +552,7 @@
 
         public void StepOver()
         {
-            if (!this.IsDebuggerPaused)
+            if (!this.IsTargetPaused)
             {
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
