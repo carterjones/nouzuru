@@ -32,7 +32,6 @@
                    !userCommand.Equals("exit") &&
                    !userCommand.Equals("quit"))
             {
-                Console.Write("> ");
                 userCommand = Console.ReadLine();
                 if (userCommand.Equals("p"))
                 {
