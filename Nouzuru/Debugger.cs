@@ -685,6 +685,10 @@
 
         #endregion
 
+        private void UpdateCurrentAddress()
+        {
+        }
+
         #region Debug Events
 
         /// <summary>

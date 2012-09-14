@@ -153,6 +153,12 @@
             return;
         }
 
+        public string DisassembleCurrentInstruction()
+        {
+            this.VerifyTargetIsPaused();
+            return this.DisassembleInstructionAtAddress(this.CurrentAddress);
+        }
+
         #region Events
 
         /// <summary>
