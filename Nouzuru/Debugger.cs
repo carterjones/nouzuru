@@ -1269,13 +1269,6 @@
                                 break;
                         }
 
-                        if (this.BlockOnSecondChanceException)
-                        {
-                            this.secondChanceExceptionLock.Reset();
-                            this.IsDebuggerPaused = true;
-                            this.secondChanceExceptionLock.WaitOne();
-                        }
-
                         break;
 
                     case (uint)WinApi.DebugEventType.CREATE_THREAD_DEBUG_EVENT:
@@ -1314,6 +1307,13 @@
 
                     default:
                         break;
+                }
+
+                if (this.BlockOnSecondChanceException)
+                {
+                    this.secondChanceExceptionLock.Reset();
+                    this.IsDebuggerPaused = true;
+                    this.secondChanceExceptionLock.WaitOne();
                 }
 
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
