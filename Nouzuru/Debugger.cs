@@ -544,18 +544,12 @@
 
         public void StepInto()
         {
-            if (!this.IsTargetPaused)
-            {
-                throw new System.InvalidOperationException("The debugger is not paused");
-            }
+            this.VerifyTargetIsPaused();
         }
 
         public void StepOver()
         {
-            if (!this.IsTargetPaused)
-            {
-                throw new System.InvalidOperationException("The debugger is not paused");
-            }
+            this.VerifyTargetIsPaused();
         }
 
         #endregion
@@ -651,6 +645,17 @@
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Verify that the target process is paused.
+        /// </summary>
+        protected void VerifyTargetIsPaused()
+        {
+            if (!this.IsTargetPaused)
+            {
+                throw new System.InvalidOperationException("The debugger is not paused");
+            }
         }
 
         #region Debug Events
