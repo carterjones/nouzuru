@@ -276,6 +276,9 @@
             [In] ref STARTUPINFO lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
+        [DllImport("kernel32.dll")]
+        public static extern bool DebugBreakProcess(IntPtr hProcess);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
 

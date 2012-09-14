@@ -565,6 +565,36 @@
             return res;
         }
 
+        #region Classic Debug Methods
+
+        public bool Pause()
+        {
+            return WinApi.DebugBreakProcess(this.Proc.Handle);
+        }
+
+        public void Resume()
+        {
+            this.ContinueDebugging();
+        }
+
+        public void StepInto()
+        {
+            if (!this.IsPaused)
+            {
+                throw new System.InvalidOperationException("The debugger is not paused");
+            }
+        }
+
+        public void StepOver()
+        {
+            if (!this.IsPaused)
+            {
+                throw new System.InvalidOperationException("The debugger is not paused");
+            }
+        }
+
+        #endregion
+
         /// <summary>
         /// Suspend the thread and prepare the thread context to be modified.
         /// </summary>
