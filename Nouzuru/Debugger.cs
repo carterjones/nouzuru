@@ -235,6 +235,7 @@
         /// If true, the debugger will set a breakpoint on the first instruction that will be executed by the main
         /// module of the executable.
         /// </param>
+        /// <remarks>TODO: fix this function. it does not properly start the target file.</remarks>
         /// <returns>Returns true if the process was successfully started in debug mode.</returns>
         public bool StartAndDebug(string filePath, bool pauseOnFirstInst)
         {
