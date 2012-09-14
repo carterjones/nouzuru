@@ -46,21 +46,27 @@
                    !userCommand.Equals("quit"))
             {
                 userCommand = Console.ReadLine();
-                if (userCommand.Equals("p"))
+                switch (userCommand)
                 {
-                    if (d.Pause())
-                    {
-                        Console.WriteLine("paused");
-                    }
-                    else
-                    {
-                        Console.WriteLine("pause unsuccessful");
-                    }
-                }
-                else if (userCommand.Equals("r"))
-                {
-                    d.Resume();
-                    Console.WriteLine("resumed");
+                    case "p":
+                        if (d.Pause())
+                        {
+                            Console.WriteLine("paused");
+                        }
+                        else
+                        {
+                            Console.WriteLine("pause unsuccessful");
+                        }
+
+                        break;
+
+                    case "r":
+                        d.Resume();
+                        Console.WriteLine("resumed");
+                        break;
+
+                    default:
+                        break;
                 }
             }
 
