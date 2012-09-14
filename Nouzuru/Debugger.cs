@@ -50,11 +50,6 @@
         private ManualResetEvent secondChanceExceptionLock = new ManualResetEvent(false);
 
         /// <summary>
-        /// Gets a value indicating where or not the debugger is paused.
-        /// </summary>
-        public bool IsPaused { get; private set; }
-
-        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
@@ -157,6 +152,11 @@
         public bool IgnoreFirstChanceExceptions { get; set; }
 
         /// <summary>
+        /// Gets a value indicating where or not the debugger is paused.
+        /// </summary>
+        public bool IsDebuggerPaused { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether this Debugger is active.
         /// </summary>
         public bool IsDebugging
@@ -193,7 +193,7 @@
         public void ContinueDebugging()
         {
             this.secondChanceExceptionLock.Set();
-            this.IsPaused = false;
+            this.IsDebuggerPaused = false;
         }
 
         /// <summary>
@@ -537,7 +537,7 @@
 
         public void StepInto()
         {
-            if (!this.IsPaused)
+            if (!this.IsDebuggerPaused)
             {
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
@@ -545,7 +545,7 @@
 
         public void StepOver()
         {
-            if (!this.IsPaused)
+            if (!this.IsDebuggerPaused)
             {
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
@@ -1265,7 +1265,7 @@
                         if (this.BlockOnSecondChanceException)
                         {
                             this.secondChanceExceptionLock.Reset();
-                            this.IsPaused = true;
+                            this.IsDebuggerPaused = true;
                             this.secondChanceExceptionLock.WaitOne();
                         }
 
