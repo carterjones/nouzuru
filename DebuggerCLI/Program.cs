@@ -48,6 +48,13 @@
                 userCommand = Console.ReadLine();
                 switch (userCommand)
                 {
+                    // go
+                    case "g":
+                        d.Resume();
+                        Console.WriteLine("resumed");
+                        break;
+
+                    // pause
                     case "p":
                         if (d.Pause())
                         {
@@ -60,9 +67,18 @@
 
                         break;
 
+                    // registers
                     case "r":
-                        d.Resume();
-                        Console.WriteLine("resumed");
+                        break;
+
+                    // step into
+                    case "si":
+                        d.StepInto();
+                        break;
+
+                    // step over
+                    case "so":
+                        d.StepOver();
                         break;
 
                     default:
