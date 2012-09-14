@@ -501,6 +501,10 @@
         /// </summary>
         public void StepOver()
         {
+            if (!this.IsOpen)
+            {
+                throw new System.InvalidOperationException("No process is attached");
+            }
             this.VerifyDebuggingIsPaused();
             this.stepOverOperationInProgress = true;
             Instruction inst = this.DisassembleInstruction(this.CurrentInstruction);
@@ -514,6 +518,40 @@
             {
                 this.StepInto();
             }
+
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
+            {
+                throw new System.InvalidOperationException(
+                    "Unable to start editing thread. GetLastError(): " + Marshal.GetLastWin32Error());
+            }
+
+            IntPtr currentInst = new IntPtr((long)cx._ip);
+            int currentInstSize = this.GetInstructionSize(currentInst);
+            IntPtr nextInst = IntPtr.Add(currentInst, currentInstSize);
+
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+#if WIN64
+            cx.Dr0 = (uint)nextInst.ToInt64();
+#else
+            cx.Dr0 = (uint)nextInst.ToInt32();
+#endif
+            cx.Dr7 =
+                (uint)(Debugger.DRegSettings.reg0rw |
+                       Debugger.DRegSettings.reg0len4 |
+                       Debugger.DRegSettings.reg0set);
+
+
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
+            {
+                throw new System.InvalidOperationException(
+                    "Unable to stop editing thread. GetLastError(): " + Marshal.GetLastWin32Error());
+            }
+
+            this.secondChanceExceptionLock.Set();
+
+            WinApi.CloseHandle(threadHandle);
         }
 
         #endregion
