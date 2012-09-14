@@ -24,6 +24,11 @@
         private bool allowedToDebug = false;
 
         /// <summary>
+        /// The current address of the target process at the last point the process was paused.
+        /// </summary>
+        private IntPtr currentAddress = IntPtr.Zero;
+
+        /// <summary>
         /// The thread that is used to run the debug loop.
         /// </summary>
         private Thread debugThread;
@@ -156,6 +161,29 @@
         /// exception has occurred and been handled.
         /// </summary>
         public bool PauseOnSecondChanceException { get; set; }
+
+        /// <summary>
+        /// Gets the current address if the target process is paused. Otherwise, returns IntPtr.Zero.
+        /// </summary>
+        public IntPtr CurrentAddress
+        {
+            get
+            {
+                if (this.IsTargetPaused)
+                {
+                    return this.currentAddress;
+                }
+                else
+                {
+                    return IntPtr.Zero;
+                }
+            }
+
+            private set
+            {
+                this.currentAddress = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether 1st chance exceptions will be ignored.
