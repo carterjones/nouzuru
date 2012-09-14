@@ -18,17 +18,15 @@
             d.BlockOnSecondChanceException = true;
             d.EventsMonitored = DebugMon.EventFilter.All;
             d.ExceptionsMonitored = DebugMon.ExceptionFilter.All;
+            if (Process.GetProcessesByName("realplay").Length == 0)
+            {
+                Process.Start(@"C:\Program Files (x86)\Real\RealPlayer\realplay.exe");
+            }
+
             if (!d.Open("realplay"))
             {
-                if (Process.GetProcessesByName("realplay").Length == 0)
-                {
-                    d.StartAndDebug(@"C:\Program Files (x86)\Real\RealPlayer\realplay.exe", true);
-                }
-                else
-                {
-                    Console.WriteLine("Unknown error opening RealPlayer");
-                    return;
-                }
+                Console.WriteLine("Unknown error opening RealPlayer");
+                return;
             }
 
             if (!d.StartDebugging())
