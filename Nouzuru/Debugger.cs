@@ -323,40 +323,11 @@
                 return false;
             }
 
-            WinApi.ThreadAccess threadRights =
-                WinApi.ThreadAccess.SET_CONTEXT |
-                WinApi.ThreadAccess.GET_CONTEXT |
-                WinApi.ThreadAccess.SUSPEND_RESUME;
-            IntPtr threadHandle = WinApi.OpenThread(threadRights, false, (uint)this.ThreadID);
-            if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
             {
-                this.Status.Log(
-                    "Could not open thread to add hardware breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                return false;
-            }
-
-            uint res = WinApi.SuspendThread(threadHandle);
-            unchecked
-            {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to suspend thread when setting breakpoint. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    return false;
-                }
-            }
-
-            WinApi.CONTEXT cx = new WinApi.CONTEXT();
-            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
-            if (!WinApi.GetThreadContext(threadHandle, ref cx))
-            {
-                this.Status.Log(
-                    "Unable to get thread context when setting breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(threadHandle);
+                this.Status.Log("Could not begin editing a thread to add a hardware breakpoint.");
                 return false;
             }
 
@@ -368,26 +339,12 @@
 #endif
             cx.Dr7 =
                 (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
-            if (!WinApi.SetThreadContext(threadHandle, ref cx))
-            {
-                this.Status.Log(
-                    "Unable to set thread context when setting breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                WinApi.CloseHandle(threadHandle);
-                return false;
-            }
 
-            res = WinApi.ResumeThread(threadHandle);
-            unchecked
+
+            if (!this.EndEditThread(ref threadHandle, ref cx))
             {
-                if (res == (uint)(-1))
-                {
-                    this.Status.Log(
-                        "Unable to resume thread when setting breakpoint. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
-                    WinApi.CloseHandle(threadHandle);
-                    return false;
-                }
+                this.Status.Log("Unable to end editing a thread when removing breakpoints.");
+                return false;
             }
 
             WinApi.CloseHandle(threadHandle);
