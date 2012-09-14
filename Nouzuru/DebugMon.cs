@@ -377,7 +377,9 @@
             {
                 if (this.ExceptionsMonitored.HasFlag(ExceptionFilter.BREAKPOINT))
                 {
-                    this.monitorLogger.Log("Breakpoint hit at: " + de.Exception.ExceptionRecord.ExceptionAddress);
+                    this.monitorLogger.Log(
+                        "Breakpoint hit at: " +
+                        this.IntPtrToFormattedAddress(de.Exception.ExceptionRecord.ExceptionAddress));
                 }
             }
 
