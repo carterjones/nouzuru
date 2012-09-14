@@ -70,7 +70,8 @@
         public Debugger()
             : base()
         {
-            this.DebugEventTimeout = WinApi.INFINITE;
+            // Use WinApi.INFINITE to wait indefinitely until an event occurs.
+            this.DebugEventTimeout = 1;
         }
 
         #endregion
@@ -1166,7 +1167,11 @@
                     }
                 }
 
-                WinApi.WaitForDebugEvent(ref de, this.DebugEventTimeout);
+                if (!WinApi.WaitForDebugEvent(ref de, this.DebugEventTimeout))
+                {
+                    continue;
+                }
+
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
