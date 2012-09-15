@@ -969,6 +969,31 @@
         #endregion
 
         /// <summary>
+        /// Determines if the target process is 32-bit or 64-bit and sets the debugger architecture appropriately.
+        /// </summary>
+        private void SetDebuggerArchitecture()
+        {
+            bool isWow64;
+            WinApi.IsWow64Process(this.ProcHandle, out isWow64);
+
+            // Note: This does not take into account for PAE. No plans to support PAE currently exist.
+            if (isWow64)
+            {
+                // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
+                this.Is64Bit = false;
+                this.d.TargetArchitecture = Bunseki.Disassembler.Architecture.x86_32;
+            }
+            else
+            {
+                // If it is not Wow64, then the process is natively running, so set it according to the OS
+                // architecture.
+                this.Is64Bit = SysInteractor.Is64Bit;
+                this.d.TargetArchitecture =
+                    this.Is64Bit ? Disassembler.Architecture.x86_64 : Disassembler.Architecture.x86_32;
+            }
+        }
+
+        /// <summary>
         /// Starts the main debug loop, optionally creating a process from the supplied file path.
         /// </summary>
         /// <param name="arguments">An optional set of arguments that dictate how an executable is debugged.</param>
@@ -1030,6 +1055,7 @@
                     (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
                 bool stc = WinApi.SetThreadContext(threadHandle, ref cx);
                 WinApi.CloseHandle(threadHandle);
+                this.SetDebuggerArchitecture();
                 this.DebugLoop();
                 return;
             }
@@ -1085,26 +1111,6 @@
                         return;
                     }
 
-                    bool isWow64;
-                    WinApi.IsWow64Process(this.ProcHandle, out isWow64);
-
-                    // 64-bit process detection.
-                    // Note: This does not take into account for PAE. No plans to support PAE currently exist.
-                    if (isWow64)
-                    {
-                        // For scanning purposes, Wow64 processes will be treated as as 32-bit processes.
-                        this.Is64Bit = false;
-                        this.d.TargetArchitecture = Bunseki.Disassembler.Architecture.x86_32;
-                    }
-                    else
-                    {
-                        // If it is not Wow64, then the process is natively running, so set it according to the OS
-                        // architecture.
-                        this.Is64Bit = SysInteractor.Is64Bit;
-                        this.d.TargetArchitecture =
-                            this.Is64Bit ? Disassembler.Architecture.x86_64 : Disassembler.Architecture.x86_32;
-                    }
-
                     if (!WinApi.DebugSetProcessKillOnExit(false))
                     {
 #if DEBUG
@@ -1117,6 +1123,7 @@
                         this.threadMayExit = false;
                     }
 
+                    this.SetDebuggerArchitecture();
                     this.DebugLoop();
 
                     return;
