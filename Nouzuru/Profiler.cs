@@ -98,7 +98,7 @@
             {
                 this.Restore(de.Exception.ExceptionRecord.ExceptionAddress, false);
                 this.SetIP(de.Exception.ExceptionRecord.ExceptionAddress);
-                this.PrepareForSingleStep(de.Exception.ExceptionRecord.ExceptionAddress);
+                //this.PrepareForSingleStep(de.Exception.ExceptionRecord.ExceptionAddress);
                 this.BreakpointAddressJustHit = de.Exception.ExceptionRecord.ExceptionAddress;
                 this.RestoreBreakpointOnExceptionSingleStep = true;
             }

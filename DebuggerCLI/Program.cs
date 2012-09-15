@@ -34,7 +34,7 @@
                 Console.Error.WriteLine();
             }
 
-            d.WaitUntilInitialBreakpointIsHit();
+            //d.WaitUntilInitialBreakpointIsHit();
             d.ContinueDebugging();
 
             // Main command loop.

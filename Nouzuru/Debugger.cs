@@ -286,7 +286,7 @@
         /// </summary>
         /// <param name="address">The address to which the instruction pointer should be set.</param>
         /// <returns>Returns true if the instruction pointer was successfully set.</returns>
-        public bool PrepareForSingleStep(IntPtr address)
+        public bool EnableSingleStepMode()
         {
             if (!this.IsOpen)
             {
@@ -300,12 +300,8 @@
                 return false;
             }
 
-#if WIN64
-            // TODO: fix Rip for x64
-            ////cx.Rip = (ulong)address.ToInt64();
-#else
             cx.EFlags = 0x100;
-#endif
+
             if (!this.EndEditThread(ref threadHandle, ref cx))
             {
                 return false;
@@ -550,6 +546,8 @@
         public void StepOver()
         {
             this.VerifyTargetIsPaused();
+            this.EnableSingleStepMode();
+            this.ContinueDebugging();
         }
 
         #endregion
@@ -1274,6 +1272,13 @@
                                 break;
                         }
 
+                        if (this.BlockOnSecondChanceException)
+                        {
+                            this.secondChanceExceptionLock.Reset();
+                            this.IsDebuggerPaused = true;
+                            this.secondChanceExceptionLock.WaitOne();
+                        }
+
                         break;
 
                     case (uint)WinApi.DebugEventType.CREATE_THREAD_DEBUG_EVENT:
@@ -1312,13 +1317,6 @@
 
                     default:
                         break;
-                }
-
-                if (this.BlockOnSecondChanceException)
-                {
-                    this.secondChanceExceptionLock.Reset();
-                    this.IsDebuggerPaused = true;
-                    this.secondChanceExceptionLock.WaitOne();
                 }
 
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
