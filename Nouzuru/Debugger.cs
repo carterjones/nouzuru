@@ -541,13 +541,13 @@
         public void StepInto()
         {
             this.VerifyTargetIsPaused();
+            this.EnableSingleStepMode();
+            this.ContinueDebugging();
         }
 
         public void StepOver()
         {
             this.VerifyTargetIsPaused();
-            this.EnableSingleStepMode();
-            this.ContinueDebugging();
         }
 
         #endregion
