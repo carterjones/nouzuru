@@ -59,6 +59,7 @@
     <Compile Include="Address.cs" />
     <Compile Include="Auxiliary.cs" />
     <Compile Include="BasicBlock.cs" />
+    <Compile Include="DebuggerSettings.cs" />
     <Compile Include="DebugMon.cs" />
     <Compile Include="Debugger.cs" />
     <Compile Include="DllInjector.cs" />

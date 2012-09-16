@@ -47,7 +47,7 @@
         /// <summary>
         /// A lock that is used to pause the debugger loop when a second chance exception has occurred.
         /// </summary>
-        private ManualResetEvent secondChanceExceptionLock = new ManualResetEvent(false);
+        private ManualResetEvent pauseDebuggerLock = new ManualResetEvent(false);
 
         /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
@@ -67,6 +67,7 @@
         {
             // Use WinApi.INFINITE to wait indefinitely until an event occurs.
             this.DebugEventTimeout = 1;
+            this.Settings = new DebuggerSettings();
         }
 
         #endregion
@@ -144,7 +145,7 @@
         /// Gets or sets a value indicating whether the debugger should pause the debugger loop after a second chance
         /// exception has occurred and been handled.
         /// </summary>
-        public bool BlockOnSecondChanceException { get; set; }
+        public bool PauseOnSecondChanceException { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether 1st chance exceptions will be ignored.
@@ -188,6 +189,8 @@
         /// </summary>
         public uint DebugEventTimeout { get; set; }
 
+        public DebuggerSettings Settings { get; set; }
+
         #endregion
 
         #region Methods
@@ -197,7 +200,7 @@
         /// </summary>
         public void ContinueDebugging()
         {
-            this.secondChanceExceptionLock.Set();
+            this.pauseDebuggerLock.Set();
             this.IsDebuggerPaused = false;
         }
 
@@ -1177,6 +1180,8 @@
                     continue;
                 }
 
+                bool pauseDebugger = false;
+
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
@@ -1191,99 +1196,209 @@
                             case (uint)WinApi.ExceptionType.STATUS_WX86_SINGLE_STEP:
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 continueStatus = this.OnSingleStepDebugException(ref de);
+                                if (this.Settings.PauseOnSingleStep)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.ACCESS_VIOLATION:
                                 continueStatus = this.OnAccessViolationDebugException(ref de);
+                                if (this.Settings.PauseOnAccessViolation)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.ARRAY_BOUNDS_EXCEEDED:
                                 continueStatus = this.OnArrayBoundsExceededDebugException(ref de);
+                                if (this.Settings.PauseOnArrayBoundsExceeded)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.STATUS_WX86_BREAKPOINT:
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
                                 continueStatus = this.OnBreakpointDebugException(ref de);
+                                if (this.Settings.PauseOnBreakpoint)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.DATATYPE_MISALIGNMENT:
                                 continueStatus = this.OnDatatypeMisalignmentDebugException(ref de);
+                                if (this.Settings.PauseOnDatatypeMisalignment)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DENORMAL_OPERAND:
                                 continueStatus = this.OnFltDenormalOperandDebugException(ref de);
+                                if (this.Settings.PauseOnFltDenormalOperand)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_DIVIDE_BY_ZERO:
                                 continueStatus = this.OnFltDivideByZeroDebugException(ref de);
+                                if (this.Settings.PauseOnFltDivideByZero)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INEXACT_RESULT:
                                 continueStatus = this.OnFltInexactResultDebugException(ref de);
+                                if (this.Settings.PauseOnFltInexactResult)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_INVALID_OPERATION:
                                 continueStatus = this.OnFltInvalidOperationDebugException(ref de);
+                                if (this.Settings.PauseOnFltInvalidOperation)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_OVERFLOW:
                                 continueStatus = this.OnFltOverflowDebugException(ref de);
+                                if (this.Settings.PauseOnFltOverflow)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_STACK_CHECK:
                                 continueStatus = this.OnFltStackCheckDebugException(ref de);
+                                if (this.Settings.PauseOnFltStackCheck)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.FLT_UNDERFLOW:
                                 continueStatus = this.OnFltUnderflowDebugException(ref de);
+                                if (this.Settings.PauseOnFltUnderflow)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.GUARD_PAGE:
                                 continueStatus = this.OnGuardPageDebugException(ref de);
+                                if (this.Settings.PauseOnGuardPage)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.ILLEGAL_INSTRUCTION:
                                 continueStatus = this.OnIllegalInstructionDebugException(ref de);
+                                if (this.Settings.PauseOnIllegalInstruction)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.IN_PAGE_ERROR:
                                 continueStatus = this.OnInPageErrorDebugException(ref de);
+                                if (this.Settings.PauseOnInPageError)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_DIVIDE_BY_ZERO:
                                 continueStatus = this.OnIntDivideByZeroDebugException(ref de);
+                                if (this.Settings.PauseOnIntDivideByZero)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.INT_OVERFLOW:
                                 continueStatus = this.OnIntOverflowDebugException(ref de);
+                                if (this.Settings.PauseOnIntOVerflow)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.INVALID_DISPOSITION:
                                 continueStatus = this.OnInvalidDispositionDebugException(ref de);
+                                if (this.Settings.PauseOnInvalidDisposition)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.NONCONTINUABLE_EXCEPTION:
                                 continueStatus = this.OnNoncontinuableExceptionDebugException(ref de);
+                                if (this.Settings.PauseOnNoncontinuableException)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.PRIV_INSTRUCTION:
                                 continueStatus = this.OnPrivInstructionDebugException(ref de);
+                                if (this.Settings.PauseOnPrivInstruction)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             case (uint)WinApi.ExceptionType.STACK_OVERFLOW:
                                 continueStatus = this.OnStackOverflowDebugException(ref de);
+                                if (this.Settings.PauseOnStackOverflow)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
 
                             default:
                                 continueStatus = this.OnUnhandledDebugException(ref de);
+                                if (this.Settings.PauseOnUnhandledDebugException)
+                                {
+                                    pauseDebugger = true;
+                                }
+
                                 break;
                         }
 
-                        if (this.BlockOnSecondChanceException)
+                        if (pauseDebugger || this.PauseOnSecondChanceException)
                         {
-                            this.secondChanceExceptionLock.Reset();
+                            this.pauseDebuggerLock.Reset();
                             this.IsDebuggerPaused = true;
-                            this.secondChanceExceptionLock.WaitOne();
+                            this.pauseDebuggerLock.WaitOne();
                         }
 
                         break;

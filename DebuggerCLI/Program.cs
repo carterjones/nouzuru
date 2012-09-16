@@ -15,7 +15,7 @@
             DebugMon d = new DebugMon();
             d.LogBreakpointAccesses = true;
             d.LogRegistersOnBreakpoint = true;
-            d.BlockOnSecondChanceException = true;
+            d.PauseOnSecondChanceException = true;
             d.EventsMonitored = DebugMon.EventFilter.All;
             d.ExceptionsMonitored = DebugMon.ExceptionFilter.All;
             if (Process.GetProcessesByName("realplay").Length == 0)
