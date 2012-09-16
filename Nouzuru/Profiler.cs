@@ -14,6 +14,17 @@
         #region Properties
 
         /// <summary>
+        /// Gets or sets a value indicating whether breakpoint accesses will be logged.
+        /// </summary>
+        public bool LogBreakpointAccesses { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the values of common registers will be logged when a breakpoint
+        /// is hit.
+        /// </summary>
+        public bool LogRegistersOnBreakpoint { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether a value should be restored when a single step exception is hit.
         /// </summary>
         protected bool RestoreBreakpointOnExceptionSingleStep { get; set; }
