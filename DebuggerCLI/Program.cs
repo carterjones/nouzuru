@@ -47,18 +47,18 @@
                     // go
                     case "g":
                         d.Resume();
-                        Console.WriteLine("resumed");
+                        Console.WriteLine("[+] Resumed.");
                         break;
 
                     // pause
                     case "p":
                         if (d.Pause())
                         {
-                            Console.WriteLine("paused");
+                            Console.WriteLine("[+] Paused successfully.");
                         }
                         else
                         {
-                            Console.WriteLine("pause unsuccessful");
+                            Console.WriteLine("[-] Pause unsuccessful.");
                         }
 
                         break;
