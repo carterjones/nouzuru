@@ -187,7 +187,7 @@
 
         #region Methods
 
-        #region Start, Stop, Pause, Resume
+        #region Start, Stop, Pause, and Resume Routines
 
         /// <summary>
         /// Starts the thread that runs DebugLoop.
@@ -455,40 +455,6 @@
         }
 
         #endregion
-
-        /// <summary>
-        /// Sets the instruction pointer of the main thread to the specified value.
-        /// </summary>
-        /// <param name="address">The address to which the instruction pointer should be set.</param>
-        public void SetIP(IntPtr address)
-        {
-            this.VerifyTargetIsOpen();
-            this.VerifyDebuggingIsPaused();
-
-            // TODO: Make this look nicer. This seems like a hack.
-            WinApi.CONTEXT cx = this.ts.Context;
-#if WIN64
-            cx.Rip = (ulong)address.ToInt64();
-#else
-            cx.Rip = (uint)address.ToInt32();
-#endif
-            this.ts.Context = cx;
-        }
-
-        /// <summary>
-        /// Enables single step mode for the current thread.
-        /// </summary>
-        public void EnableSingleStepMode()
-        {
-            this.VerifyTargetIsOpen();
-            this.VerifyDebuggingIsPaused();
-            this.WaitForTargetStateInitialization();
-
-            // TODO: Make this look nicer. This seems like a hack.
-            WinApi.CONTEXT cx = this.ts.Context;
-            cx.EFlags |= 0x100;
-            this.ts.Context = cx;
-        }
 
         #region Step Routines
 
@@ -935,6 +901,42 @@
 
         #endregion
 
+        #region Auxiliary Routines
+
+        /// <summary>
+        /// Sets the instruction pointer of the main thread to the specified value.
+        /// </summary>
+        /// <param name="address">The address to which the instruction pointer should be set.</param>
+        protected void SetIP(IntPtr address)
+        {
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
+
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
+#if WIN64
+            cx.Rip = (ulong)address.ToInt64();
+#else
+            cx.Rip = (uint)address.ToInt32();
+#endif
+            this.ts.Context = cx;
+        }
+
+        /// <summary>
+        /// Enables single step mode for the current thread.
+        /// </summary>
+        protected void EnableSingleStepMode()
+        {
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
+            this.WaitForTargetStateInitialization();
+
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
+            cx.EFlags |= 0x100;
+            this.ts.Context = cx;
+        }
+
         /// <summary>
         /// Determines if the target process is 32-bit or 64-bit and sets the debugger architecture appropriately.
         /// </summary>
@@ -1110,6 +1112,8 @@
                 Thread.Sleep(1);
             }
         }
+
+        #endregion
 
         /// <summary>
         /// This is the main debug loop, which is called as a single thread that attaches to the target process, using
