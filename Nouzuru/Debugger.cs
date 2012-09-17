@@ -253,10 +253,7 @@
 
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                return false;
-            }
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
 
 #if WIN64
             // TODO: fix Rip for x64
@@ -284,10 +281,7 @@
 
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                return false;
-            }
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
 
             cx.EFlags = 0x100;
 
@@ -313,11 +307,7 @@
 
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                this.Status.Log("Could not begin editing a thread to add a hardware breakpoint.");
-                return false;
-            }
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
 
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
 #if WIN64
@@ -420,11 +410,7 @@
 
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                this.Status.Log("Could not begin editing a thread to remove hardware breakpoints.");
-                return false;
-            }
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
 
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             cx.Dr0 = 0x0;
@@ -536,7 +522,7 @@
         /// <param name="threadHandle">A handle of the thread to be modified.</param>
         /// <param name="cx">The context of the thread to be modified.</param>
         /// <returns>Returns true if the thread was successfully paused and prepared for modification.</returns>
-        protected bool BeginEditThread(uint threadId, out IntPtr threadHandle, out WinApi.CONTEXT cx)
+        protected void BeginEditThread(uint threadId, out IntPtr threadHandle, out WinApi.CONTEXT cx)
         {
             WinApi.ThreadAccess threadRights =
                 WinApi.ThreadAccess.SET_CONTEXT |
@@ -575,7 +561,6 @@
             }
 
             cx = context;
-            return true;
         }
 
         /// <summary>
