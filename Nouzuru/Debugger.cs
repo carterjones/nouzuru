@@ -514,6 +514,8 @@
 
         #endregion
 
+        #region Thread Manipulation
+
         /// <summary>
         /// Suspend the thread and prepare the thread context to be modified.
         /// </summary>
@@ -593,16 +595,9 @@
             }
         }
 
-        /// <summary>
-        /// Verifies that a target process is open.
-        /// </summary>
-        protected void VerifyTargetIsOpen()
-        {
-            if (!this.IsOpen)
-            {
-                throw new InvalidOperationException("No target process is open");
-            }
-        }
+        #endregion
+
+        #region Verification Routines
 
         /// <summary>
         /// Verify that the target process is paused.
@@ -614,6 +609,19 @@
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
         }
+
+        /// <summary>
+        /// Verifies that a target process is open.
+        /// </summary>
+        protected void VerifyTargetIsOpen()
+        {
+            if (!this.IsOpen)
+            {
+                throw new InvalidOperationException("No target process is open");
+            }
+        }
+
+        #endregion
 
         #region Debug Events
 
@@ -1452,7 +1460,7 @@
             this.threadMayExit = true;
             return;
         }
-        
+
         #endregion
 
         #region Structures
