@@ -560,42 +560,33 @@
             threadHandle = WinApi.OpenThread(threadRights, false, threadId);
             if (threadHandle == null || threadHandle.Equals(IntPtr.Zero))
             {
-                this.Status.Log(
-                    "Could not open thread to add hardware breakpoint. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + threadId);
-                threadHandle = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
+                string msg =
+                    "Unable to obtain a thread handle for TID: " + threadId + ". Error: " +
+                    Marshal.GetLastWin32Error();
+                WinApi.CloseHandle(threadHandle);
+                throw new InvalidOperationException(msg);
             }
 
-            uint res = WinApi.SuspendThread(threadHandle);
+            uint result = WinApi.SuspendThread(threadHandle);
             unchecked
             {
-                if (res == (uint)(-1))
+                if (result == (uint)(-1))
                 {
-                    this.Status.Log(
-                        "Unable to suspend thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    string msg =
+                        "Unable to suspend thread, TID: " + threadId + ". Error: " + Marshal.GetLastWin32Error();
                     WinApi.CloseHandle(threadHandle);
-                    cx = new WinApi.CONTEXT();
-                    threadHandle = IntPtr.Zero;
-                    return false;
+                    throw new InvalidOperationException(msg);
                 }
             }
 
             WinApi.CONTEXT context = new WinApi.CONTEXT();
-
-            // TODO: get the most context data from the thread, if FULL cannot get the most.
             context.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.GetThreadContext(threadHandle, ref context))
             {
-                this.Status.Log(
-                    "Unable to get thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                string msg =
+                    "Unable to get thread context, TID: " + threadId + ". Error: " + Marshal.GetLastWin32Error();
                 WinApi.CloseHandle(threadHandle);
-                threadHandle = IntPtr.Zero;
-                cx = new WinApi.CONTEXT();
-                return false;
+                throw new InvalidOperationException(msg);
             }
 
             cx = context;
