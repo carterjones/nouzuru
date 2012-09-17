@@ -277,26 +277,18 @@
         }
 
         /// <summary>
-        /// Sets the instruction pointer of the main thread to the specified value.
+        /// Enables single step mode for the current thread.
         /// </summary>
-        /// <param name="address">The address to which the instruction pointer should be set.</param>
-        /// <returns>Returns true if the instruction pointer was successfully set.</returns>
-        public bool EnableSingleStepMode()
+        public void EnableSingleStepMode()
         {
-            if (!this.IsOpen)
-            {
-                return false;
-            }
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
+            this.WaitForTargetStateInitialization();
 
-            IntPtr threadHandle;
-            WinApi.CONTEXT cx;
-            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
-
-            cx.EFlags = 0x100;
-
-            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
-
-            return WinApi.CloseHandle(threadHandle);
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
+            cx.EFlags |= 0x100;
+            this.ts.Context = cx;
         }
 
         /// <summary>
@@ -518,7 +510,6 @@
         /// <param name="threadId">The ID of the thread to be modified.</param>
         /// <param name="threadHandle">A handle of the thread to be modified.</param>
         /// <param name="cx">The context of the thread to be modified.</param>
-        /// <returns>Returns true if the thread was successfully paused and prepared for modification.</returns>
         protected void BeginEditThread(uint threadId, out IntPtr threadHandle, out WinApi.CONTEXT cx)
         {
             WinApi.ThreadAccess threadRights =
@@ -589,6 +580,17 @@
                     WinApi.CloseHandle(threadHandle);
                     throw new InvalidOperationException(msg);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Verifies that a target process is open.
+        /// </summary>
+        protected void VerifyTargetIsOpen()
+        {
+            if (!this.IsOpen)
+            {
+                throw new InvalidOperationException("No target process is open");
             }
         }
 
@@ -1081,6 +1083,17 @@
         }
 
         /// <summary>
+        /// Wait for the target state to be properly initialized.
+        /// </summary>
+        private void WaitForTargetStateInitialization()
+        {
+            while (!this.ts.IsReady)
+            {
+                Thread.Sleep(1);
+            }
+        }
+
+        /// <summary>
         /// This is the main debug loop, which is called as a single thread that attaches to the target process, using
         /// debugging privileges.
         /// </summary>
@@ -1397,11 +1410,17 @@
                     this.ts.ThreadId = de.dwThreadId;
                     this.ts.ThreadHandle = threadHandle;
                     this.ts.Context = context;
+                    this.ts.IsReady = true;
 
                     // Pause the debugger and target.
                     this.pauseDebuggerLock.Reset();
                     this.IsDebuggingPaused = true;
                     this.pauseDebuggerLock.WaitOne();
+
+                    // Save any changes that have been made to the thread context.
+                    threadHandle = this.ts.ThreadHandle;
+                    context = this.ts.Context;
+                    this.EndEditThread(this.ts.ThreadId, ref threadHandle, ref context);
 
                     // Flag the debugger as unpaused.
                     this.IsDebuggingPaused = false;
@@ -1465,12 +1484,19 @@
             public IntPtr ThreadHandle { get; set; }
 
             /// <summary>
+            /// Gets or sets a value indicating whether this TargetState has been properly initialized.
+            /// </summary>
+            public bool IsReady { get; set; }
+
+            /// <summary>
             /// Resets the values of this TargetState object.
             /// </summary>
             public void Reset()
             {
                 this.Context = new WinApi.CONTEXT();
                 this.ThreadId = 0;
+                this.ThreadHandle = IntPtr.Zero;
+                this.IsReady = false;
             }
         }
 
