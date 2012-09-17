@@ -1341,28 +1341,9 @@
                                 break;
                         }
 
-                        if (pauseDebugger || this.PauseOnSecondChanceException)
+                        if (this.PauseOnSecondChanceException)
                         {
-                            // Reset the target state information.
-                            this.ts.Reset();
-
-                            // Get the thread context.
-                            IntPtr threadHandle;
-                            WinApi.CONTEXT context = new WinApi.CONTEXT();
-                            this.BeginEditThread(de.dwThreadId, out threadHandle, out context);
-
-                            // Save the thread state information.
-                            this.ts.ThreadId = de.dwThreadId;
-                            this.ts.ThreadHandle = threadHandle;
-                            this.ts.Context = context;
-
-                            // Pause the debugger and target.
-                            this.pauseDebuggerLock.Reset();
-                            this.IsDebuggingPaused = true;
-                            this.pauseDebuggerLock.WaitOne();
-
-                            // Delete any target state information.
-                            this.ts.Reset();
+                            pauseDebugger = true;
                         }
 
                         break;
@@ -1403,6 +1384,30 @@
 
                     default:
                         break;
+                }
+
+                if (pauseDebugger)
+                {
+                    // Reset the target state information.
+                    this.ts.Reset();
+
+                    // Get the thread context.
+                    IntPtr threadHandle;
+                    WinApi.CONTEXT context = new WinApi.CONTEXT();
+                    this.BeginEditThread(de.dwThreadId, out threadHandle, out context);
+
+                    // Save the thread state information.
+                    this.ts.ThreadId = de.dwThreadId;
+                    this.ts.ThreadHandle = threadHandle;
+                    this.ts.Context = context;
+
+                    // Pause the debugger and target.
+                    this.pauseDebuggerLock.Reset();
+                    this.IsDebuggingPaused = true;
+                    this.pauseDebuggerLock.WaitOne();
+
+                    // Delete any target state information.
+                    this.ts.Reset();
                 }
 
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
