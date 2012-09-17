@@ -311,39 +311,7 @@
 
         #endregion
 
-        /// <summary>
-        /// Sets the instruction pointer of the main thread to the specified value.
-        /// </summary>
-        /// <param name="address">The address to which the instruction pointer should be set.</param>
-        public void SetIP(IntPtr address)
-        {
-            this.VerifyTargetIsOpen();
-            this.VerifyDebuggingIsPaused();
-
-            // TODO: Make this look nicer. This seems like a hack.
-            WinApi.CONTEXT cx = this.ts.Context;
-#if WIN64
-            cx.Rip = (ulong)address.ToInt64();
-#else
-            cx.Rip = (uint)address.ToInt32();
-#endif
-            this.ts.Context = cx;
-        }
-
-        /// <summary>
-        /// Enables single step mode for the current thread.
-        /// </summary>
-        public void EnableSingleStepMode()
-        {
-            this.VerifyTargetIsOpen();
-            this.VerifyDebuggingIsPaused();
-            this.WaitForTargetStateInitialization();
-
-            // TODO: Make this look nicer. This seems like a hack.
-            WinApi.CONTEXT cx = this.ts.Context;
-            cx.EFlags |= 0x100;
-            this.ts.Context = cx;
-        }
+        #region Breakpoint Management
 
         /// <summary>
         /// Adds specified address to the Dr0 register.
@@ -484,6 +452,42 @@
             res &= this.UnsetAllSoftBPs();
             res &= this.UnsetAllHardBPs();
             return res;
+        }
+
+        #endregion
+
+        /// <summary>
+        /// Sets the instruction pointer of the main thread to the specified value.
+        /// </summary>
+        /// <param name="address">The address to which the instruction pointer should be set.</param>
+        public void SetIP(IntPtr address)
+        {
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
+
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
+#if WIN64
+            cx.Rip = (ulong)address.ToInt64();
+#else
+            cx.Rip = (uint)address.ToInt32();
+#endif
+            this.ts.Context = cx;
+        }
+
+        /// <summary>
+        /// Enables single step mode for the current thread.
+        /// </summary>
+        public void EnableSingleStepMode()
+        {
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
+            this.WaitForTargetStateInitialization();
+
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
+            cx.EFlags |= 0x100;
+            this.ts.Context = cx;
         }
 
         #region Classic Debug Methods
