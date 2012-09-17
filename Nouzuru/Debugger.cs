@@ -265,10 +265,7 @@
             cx.Eip = (uint)address.ToInt32();
 #endif
 
-            if (!this.EndEditThread(ref threadHandle, ref cx))
-            {
-                return false;
-            }
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
 
             return WinApi.CloseHandle(threadHandle);
         }
@@ -294,10 +291,7 @@
 
             cx.EFlags = 0x100;
 
-            if (!this.EndEditThread(ref threadHandle, ref cx))
-            {
-                return false;
-            }
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
 
             return WinApi.CloseHandle(threadHandle);
         }
@@ -334,11 +328,7 @@
             cx.Dr7 =
                 (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
 
-            if (!this.EndEditThread(ref threadHandle, ref cx))
-            {
-                this.Status.Log("Unable to end editing a thread when removing breakpoints.");
-                return false;
-            }
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
 
             WinApi.CloseHandle(threadHandle);
             return true;
@@ -443,11 +433,7 @@
             cx.Dr3 = 0x0;
             cx.Dr7 = 0x0;
 
-            if (!this.EndEditThread(ref threadHandle, ref cx))
-            {
-                this.Status.Log("Unable to end editing a thread when removing breakpoints.");
-                return false;
-            }
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
 
             WinApi.CloseHandle(threadHandle);
             return true;
@@ -595,20 +581,20 @@
         /// <summary>
         /// Apply the thread context modification and resume the thread.
         /// </summary>
+        /// <param name="threadId">The ID of the thread to be modified.</param>
         /// <param name="threadHandle">A handle of the thread to be modified.</param>
         /// <param name="cx">The context of the thread to be modified.</param>
-        /// <returns>Returns true if the thread was successfully modified and resumed.</returns>
-        protected bool EndEditThread(ref IntPtr threadHandle, ref WinApi.CONTEXT cx)
+        protected void EndEditThread(uint threadId, ref IntPtr threadHandle, ref WinApi.CONTEXT cx)
         {
             // TODO: get the most context data from the thread, if FULL cannot get the most.
             cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
             if (!WinApi.SetThreadContext(threadHandle, ref cx))
             {
-                this.Status.Log(
-                    "Unable to set thread context when setting instruction pointer. Error: " +
-                    Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                string msg =
+                    "Unable to set thread context for TID: " + threadId + ". Error: " +
+                    Marshal.GetLastWin32Error();
                 WinApi.CloseHandle(threadHandle);
-                return false;
+                throw new InvalidOperationException(msg);
             }
 
             uint res = WinApi.ResumeThread(threadHandle);
@@ -616,15 +602,12 @@
             {
                 if (res == (uint)(-1))
                 {
-                    this.Status.Log(
-                        "Unable to resume thread when setting instruction pointer. Error: " +
-                        Marshal.GetLastWin32Error() + ", tid: " + this.ThreadID);
+                    string msg =
+                        "Unable to resume thread, TID: " + threadId + ". Error: " + Marshal.GetLastWin32Error();
                     WinApi.CloseHandle(threadHandle);
-                    return false;
+                    throw new InvalidOperationException(msg);
                 }
             }
-
-            return true;
         }
 
         /// <summary>

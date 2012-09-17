@@ -875,7 +875,7 @@
             WinApi.CONTEXT cx;
             this.BeginEditThread(de.dwThreadId, out threadHandle, out cx);
             this.LogRegisters(ref cx);
-            this.EndEditThread(ref threadHandle, ref cx);
+            this.EndEditThread(de.dwThreadId, ref threadHandle, ref cx);
         }
 
         /// <summary>
