@@ -50,6 +50,11 @@
         private ManualResetEvent pauseDebuggerLock = new ManualResetEvent(false);
 
         /// <summary>
+        /// If true, a step over operation is in progress.
+        /// </summary>
+        private bool stepOverOperationInProgress = false;
+
+        /// <summary>
         /// If true, the debugging thread is permitted to exit after the debug loop has been exited. If false, the
         /// debug thread is not permitted to exit, since cleanup routines must first be performed.
         /// </summary>
@@ -182,6 +187,17 @@
         /// Gets or sets a collection of user-specified settings relating to this debugger instance's behavior.
         /// </summary>
         public DebuggerSettings Settings { get; set; }
+
+        /// <summary>
+        /// Gets the current instruction if debugging is paused. If debugging is not paused, returns IntPtr.Zero.
+        /// </summary>
+        private IntPtr CurrentInstruction
+        {
+            get
+            {
+                return new IntPtr((long)this.ts.Context._ip);
+            }
+        }
 
         #endregion
 
@@ -476,6 +492,18 @@
         public void StepOver()
         {
             this.VerifyDebuggingIsPaused();
+            this.stepOverOperationInProgress = true;
+            Instruction inst = this.DisassembleInstruction(this.CurrentInstruction);
+            if (inst.FlowType == Instruction.ControlFlow.Call)
+            {
+                IntPtr nextInstructionAddress = IntPtr.Add(this.CurrentInstruction, (int)inst.NumBytes);
+                this.SetSoftBP(nextInstructionAddress);
+                this.ResumeDebugging();
+            }
+            else
+            {
+                this.StepInto();
+            }
         }
 
         #endregion
@@ -1175,9 +1203,10 @@
                             case (uint)WinApi.ExceptionType.STATUS_WX86_SINGLE_STEP:
                             case (uint)WinApi.ExceptionType.SINGLE_STEP:
                                 continueStatus = this.OnSingleStepDebugException(ref de);
-                                if (this.Settings.PauseOnSingleStep)
+                                if (this.Settings.PauseOnSingleStep || this.stepOverOperationInProgress)
                                 {
                                     pauseDebugger = true;
+                                    this.stepOverOperationInProgress = false;
                                 }
 
                                 break;
@@ -1391,6 +1420,11 @@
                         break;
 
                     case (uint)WinApi.DebugEventType.EXIT_THREAD_DEBUG_EVENT:
+                        if (this.stepOverOperationInProgress)
+                        {
+                            this.stepOverOperationInProgress = false;
+                        }
+
                         continueStatus = this.OnExitThreadDebugEvent(ref de);
                         break;
 

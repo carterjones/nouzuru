@@ -261,6 +261,24 @@
         }
 
         /// <summary>
+        /// Disassemble the instruction at the specified address.
+        /// </summary>
+        /// <param name="address">The address of the instruction.</param>
+        /// <returns>Returns the disassembled instruction. On failure, returns an invalid instruction.</returns>
+        public Instruction DisassembleInstruction(IntPtr address)
+        {
+            List<Instruction> insts = this.DisassembleAddressRange(address, 15);
+            if (insts.Count > 0)
+            {
+                return insts[0];
+            }
+            else
+            {
+                return Instruction.CreateInvalidInstruction();
+            }
+        }
+
+        /// <summary>
         /// Gets the name of the file referenced by the supplied hModule.
         /// </summary>
         /// <param name="moduleHandle">The hModule.</param>
