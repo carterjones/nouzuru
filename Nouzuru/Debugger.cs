@@ -178,6 +178,9 @@
         /// </summary>
         public uint DebugEventTimeout { get; set; }
 
+        /// <summary>
+        /// Gets or sets a collection of user-specified settings relating to this debugger instance's behavior.
+        /// </summary>
         public DebuggerSettings Settings { get; set; }
 
         #endregion
@@ -317,7 +320,7 @@
         }
 
         /// <summary>
-        /// Sets an int3 breakpoint at the specified address. Saves the old value at the address, so that when the
+        /// Sets an INT3 breakpoint at the specified address. Saves the old value at the address, so that when the
         /// breakpoint is hit, it can be temporarily replaced, so the code can continue to run, if desired.
         /// </summary>
         /// <param name="address">The address at which the breakpoint will be placed.</param>
@@ -418,9 +421,9 @@
         }
 
         /// <summary>
-        /// Remove all int3 breakpoints that are tracked by this debugger.
+        /// Remove all INT3 breakpoints that are tracked by this debugger.
         /// </summary>
-        /// <returns>Returns true if all int3 breakpoints are successfully removed.</returns>
+        /// <returns>Returns true if all INT3 breakpoints are successfully removed.</returns>
         public bool UnsetAllSoftBPs()
         {
             if (!this.IsOpen)
@@ -448,7 +451,7 @@
         }
 
         /// <summary>
-        /// Unsets the int3 breakpoint, if it exists, at the specified address.
+        /// Unsets the INT3 breakpoint, if it exists, at the specified address.
         /// </summary>
         /// <param name="address">The address at which the breakpoint had been set.</param>
         /// <returns>Returns true if the breakpoint is successfully removed.</returns>
@@ -481,6 +484,10 @@
 
         #region Classic Debug Methods
 
+        /// <summary>
+        /// Executes the next instruction and then pauses the debugger. If the next instruction is a call instruction,
+        /// this will pause on the first instruction of the called function.
+        /// </summary>
         public void StepInto()
         {
             this.VerifyDebuggingIsPaused();
@@ -488,6 +495,10 @@
             this.ResumeDebugging();
         }
 
+        /// <summary>
+        /// Executes the next instruction and then pauses the debugger. If the next instruction is a call instruction,
+        /// this will pause on the instruction following the call instruction.
+        /// </summary>
         public void StepOver()
         {
             this.VerifyDebuggingIsPaused();
