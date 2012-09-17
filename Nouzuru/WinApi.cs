@@ -39,6 +39,14 @@
 
         #region Enumerations
 
+        public enum ADDRESS_MODE : byte
+        {
+            AddrMode1616 = 0,
+            AddrMode1632 = 1,
+            AddrModeReal = 2,
+            AddrModeFlat = 3
+        }
+
         [Flags]
         public enum FileMapAccess : uint
         {
@@ -61,6 +69,16 @@
             SectionImage = 0x1000000,
             SectionNoCache = 0x10000000,
             SectionReserve = 0x4000000,
+        }
+
+        /// <summary>
+        /// Documentation at http://msdn.microsoft.com/en-us/library/windows/desktop/ms680650.aspx
+        /// </summary>
+        public enum MachineType : uint
+        {
+            IMAGE_FILE_MACHINE_I386 = 0x014c,
+            IMAGE_FILE_MACHINE_IA64 = 0x0200,
+            IMAGE_FILE_MACHINE_AMD64 = 0x8664
         }
 
         /// <summary>
@@ -388,6 +406,37 @@
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetThreadContext(IntPtr hThread, ref CONTEXT lpContext);
 
+        [DllImport("dbghelp.dll", SetLastError = true)]
+        public static extern bool StackWalk(
+            MachineType MachineType,
+            IntPtr hProcess,
+            IntPtr hThread,
+            ref STACKFRAME64 StackFrame,
+            ref CONTEXT ContextRecord,
+            IntPtr ReadMemoryRoutine,
+            IntPtr FunctionTableAccessRoutine,
+            IntPtr GetModuleBaseRoutine,
+            IntPtr TranslateAddress);
+
+        public static bool StackWalk(
+            MachineType MachineType,
+            IntPtr hProcess,
+            IntPtr hThread,
+            ref STACKFRAME64 StackFrame,
+            ref CONTEXT ContextRecord)
+        {
+            return WinApi.StackWalk(
+                MachineType,
+                hProcess,
+                hThread,
+                ref StackFrame,
+                ref ContextRecord,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                IntPtr.Zero,
+                IntPtr.Zero);
+        }
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern uint SuspendThread(IntPtr hThread);
 
@@ -416,6 +465,14 @@
         #endregion
 
         #region Structures
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ADDRESS64
+        {
+            public ulong Offset;
+            public ushort Segment;
+            public ADDRESS_MODE Mode;
+        }
 
         /// <summary>
         /// Documentation available at http://msdn.microsoft.com/en-us/library/windows/desktop/aa366775.aspx.
@@ -914,6 +971,24 @@
         }
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct KDHELP64
+        {
+            public ulong Thread;
+            public uint ThCallbackStack;
+            public uint ThCallbackBStore;
+            public uint NextCallback;
+            public uint FramePointer;
+            public ulong KiCallUserMode;
+            public ulong KeUserCallbackDispatcher;
+            public ulong SystemRangeStart;
+            public ulong KiUserExceptionDispatcher;
+            public ulong StackBase;
+            public ulong StackLimit;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 5)]
+            public ulong[] Reserved;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
         public struct LOAD_DLL_DEBUG_INFO
         {
             public IntPtr hFile;
@@ -954,6 +1029,24 @@
             public int nLength;
             public IntPtr lpSecurityDescriptor;
             public int bInheritHandle;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct STACKFRAME64
+        {
+            public ADDRESS64 AddrPC;
+            public ADDRESS64 AddrReturn;
+            public ADDRESS64 AddrFrame;
+            public ADDRESS64 AddrStack;
+            public ADDRESS64 AddrBStore;
+            public IntPtr FuncTableEntry;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public ulong[] Params;
+            public bool Far;
+            public bool Virtual;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
+            public ulong[] Reserved;
+            public KDHELP64 KdHelp;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

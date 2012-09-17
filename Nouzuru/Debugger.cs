@@ -523,6 +523,36 @@
             this.ResumeDebugging();
         }
 
+        public void StepOut()
+        {
+            this.VerifyDebuggingIsPaused();
+
+            // Initialize stack frame structure.
+            WinApi.STACKFRAME64 sf = new WinApi.STACKFRAME64();
+            sf.AddrReturn.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            //sf.AddrPC.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            //sf.AddrPC.Offset = this.ts.Context._ip;
+            //sf.AddrFrame.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+#if WIN64
+            //sf.AddrFrame.Offset = this.ts.Context._bp;
+#else
+            //sf.AddrFrame.Offset = this.ts.Context._bp;
+#endif
+            //sf.AddrStack.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            //sf.AddrStack.Offset = this.ts.Context._sp;
+
+            // Walk the stack.
+            WinApi.CONTEXT cx = this.ts.Context;
+            if (!WinApi.StackWalk(
+                WinApi.MachineType.IMAGE_FILE_MACHINE_IA64, this.ProcHandle, this.ts.ThreadHandle, ref sf, ref cx))
+            {
+                throw new InvalidOperationException(
+                    "Unable to walk the stack. Error: " + Marshal.GetLastWin32Error());
+            }
+
+            Console.WriteLine();
+        }
+
         /// <summary>
         /// Executes the next instruction and then pauses the debugger. If the next instruction is a call instruction,
         /// this will pause on the instruction following the call instruction.

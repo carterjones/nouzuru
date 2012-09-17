@@ -77,6 +77,11 @@
                         d.StepInto();
                         break;
 
+                    // step out (function)
+                    case "sof":
+                        d.StepOut();
+                        break;
+
                     // step over
                     case "so":
                         d.StepOver();
