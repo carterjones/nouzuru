@@ -252,28 +252,19 @@
         /// Sets the instruction pointer of the main thread to the specified value.
         /// </summary>
         /// <param name="address">The address to which the instruction pointer should be set.</param>
-        /// <returns>Returns true if the instruction pointer was successfully set.</returns>
-        public bool SetIP(IntPtr address)
+        public void SetIP(IntPtr address)
         {
-            if (!this.IsOpen)
-            {
-                return false;
-            }
+            this.VerifyTargetIsOpen();
+            this.VerifyDebuggingIsPaused();
 
-            IntPtr threadHandle;
-            WinApi.CONTEXT cx;
-            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
-
+            // TODO: Make this look nicer. This seems like a hack.
+            WinApi.CONTEXT cx = this.ts.Context;
 #if WIN64
-            // TODO: fix Rip for x64
-            ////cx.Rip = (ulong)address.ToInt64();
+            cx.Rip = (ulong)address.ToInt64();
 #else
-            cx.Eip = (uint)address.ToInt32();
+            cx.Rip = (uint)address.ToInt32();
 #endif
-
-            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
-
-            return WinApi.CloseHandle(threadHandle);
+            this.ts.Context = cx;
         }
 
         /// <summary>
