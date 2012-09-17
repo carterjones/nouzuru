@@ -187,22 +187,32 @@
 
         #region Methods
 
-        /// <summary>
-        /// Pauses the target process by breaking into it via DebugBreakProcess.
-        /// </summary>
-        /// <returns>true if the target was successfully paused</returns>
-        public bool PauseDebugging()
-        {
-            this.IsDebuggingPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
-            return this.IsDebuggingPaused;
-        }
+        #region Start, Stop, Pause, Resume
 
         /// <summary>
-        /// Resumes the debugger loop, if it has been paused.
+        /// Starts the thread that runs DebugLoop.
         /// </summary>
-        public void ResumeDebugging()
+        /// <returns>Returns true if the thread is started successfully.</returns>
+        public bool StartDebugging()
         {
-            this.pauseDebuggerLock.Set();
+            if (!this.IsOpen)
+            {
+                return false;
+            }
+
+            if (this.debugThread != null && this.debugThread.IsAlive)
+            {
+                this.debugThread.Join();
+            }
+
+            this.debugThread = new Thread(this.StartDebugLoop);
+            this.debugThread.Start();
+            while (!this.debugThreadInitComplete)
+            {
+                Thread.Sleep(1);
+            }
+
+            return this.debugThreadInitSuccess;
         }
 
         /// <summary>
@@ -250,6 +260,56 @@
         {
             return this.StartAndDebug(filePath, string.Empty, pauseOnFirstInst);
         }
+
+        /// <summary>
+        /// Performs necessary cleanup and then stops the debugging thread.
+        /// </summary>
+        /// <returns>Returns true if debugging was successfully stopped.</returns>
+        public bool StopDebugging()
+        {
+            if (!this.IsOpen)
+            {
+                return false;
+            }
+
+            this.UnsetAllBPs();
+            this.allowedToDebug = false;
+
+            if (this.debugThread != null)
+            {
+                // Unblock the thread, if a second chance exception has occured.
+                this.ResumeDebugging();
+
+                // Wait for the thread to terminate.
+                while (this.debugThread.IsAlive && !this.threadMayExit)
+                {
+                }
+
+                this.debugThread.Join();
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Pauses the target process by breaking into it via DebugBreakProcess.
+        /// </summary>
+        /// <returns>true if the target was successfully paused</returns>
+        public bool PauseDebugging()
+        {
+            this.IsDebuggingPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
+            return this.IsDebuggingPaused;
+        }
+
+        /// <summary>
+        /// Resumes the debugger loop, if it has been paused.
+        /// </summary>
+        public void ResumeDebugging()
+        {
+            this.pauseDebuggerLock.Set();
+        }
+
+        #endregion
 
         /// <summary>
         /// Sets the instruction pointer of the main thread to the specified value.
@@ -334,62 +394,6 @@
 
             byte int3Bp = 0xcc;
             return this.Write(address, int3Bp, Patcher.WriteOptions.SaveOldValue);
-        }
-
-        /// <summary>
-        /// Starts the thread that runs DebugLoop.
-        /// </summary>
-        /// <returns>Returns true if the thread is started successfully.</returns>
-        public bool StartDebugging()
-        {
-            if (!this.IsOpen)
-            {
-                return false;
-            }
-
-            if (this.debugThread != null && this.debugThread.IsAlive)
-            {
-                this.debugThread.Join();
-            }
-
-            this.debugThread = new Thread(this.StartDebugLoop);
-            this.debugThread.Start();
-            while (!this.debugThreadInitComplete)
-            {
-                Thread.Sleep(1);
-            }
-
-            return this.debugThreadInitSuccess;
-        }
-
-        /// <summary>
-        /// Performs necessary cleanup and then stops the debugging thread.
-        /// </summary>
-        /// <returns>Returns true if debugging was successfully stopped.</returns>
-        public bool StopDebugging()
-        {
-            if (!this.IsOpen)
-            {
-                return false;
-            }
-
-            this.UnsetAllBPs();
-            this.allowedToDebug = false;
-
-            if (this.debugThread != null)
-            {
-                // Unblock the thread, if a second chance exception has occured.
-                this.ResumeDebugging();
-
-                // Wait for the thread to terminate.
-                while (this.debugThread.IsAlive && !this.threadMayExit)
-                {
-                }
-
-                this.debugThread.Join();
-            }
-
-            return true;
         }
 
         /// <summary>
