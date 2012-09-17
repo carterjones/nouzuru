@@ -523,31 +523,39 @@
             this.ResumeDebugging();
         }
 
+        /// <summary>
+        /// Step out of the current function.
+        /// </summary>
         public void StepOut()
         {
             this.VerifyDebuggingIsPaused();
 
+            // The goal here is to calculate the return address, so a breakpoint can be placed there.
+
             // Initialize stack frame structure.
             WinApi.STACKFRAME64 sf = new WinApi.STACKFRAME64();
             sf.AddrReturn.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
-            //sf.AddrPC.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
-            //sf.AddrPC.Offset = this.ts.Context._ip;
-            //sf.AddrFrame.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            sf.AddrPC.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            sf.AddrPC.Offset = this.ts.Context._ip;
+            sf.AddrFrame.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
 #if WIN64
-            //sf.AddrFrame.Offset = this.ts.Context._bp;
+            sf.AddrFrame.Offset = this.ts.Context._sp;
+            WinApi.MachineType mt = WinApi.MachineType.IMAGE_FILE_MACHINE_IA64;
 #else
-            //sf.AddrFrame.Offset = this.ts.Context._bp;
+            sf.AddrFrame.Offset = this.ts.Context._bp;
+            WinApi.MachineType mt = WinApi.MachineType.IMAGE_FILE_MACHINE_I386;
 #endif
-            //sf.AddrStack.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
-            //sf.AddrStack.Offset = this.ts.Context._sp;
+            sf.AddrStack.Mode = WinApi.ADDRESS_MODE.AddrModeFlat;
+            sf.AddrStack.Offset = this.ts.Context._sp;
 
             // Walk the stack.
             WinApi.CONTEXT cx = this.ts.Context;
-            if (!WinApi.StackWalk(
-                WinApi.MachineType.IMAGE_FILE_MACHINE_IA64, this.ProcHandle, this.ts.ThreadHandle, ref sf, ref cx))
+
+            while (sf.AddrPC.Offset != 0)
             {
-                throw new InvalidOperationException(
-                    "Unable to walk the stack. Error: " + Marshal.GetLastWin32Error());
+                // TODO: fix this. it is not functioning properly.
+                WinApi.StackWalk(mt, this.ProcHandle, this.ts.ThreadHandle, ref sf, ref cx);
+                Console.WriteLine("  > " + this.IntPtrToFormattedAddress(new IntPtr((long)sf.AddrPC.Offset)));
             }
 
             Console.WriteLine();
@@ -1262,6 +1270,8 @@
             WinApi.DEBUG_EVENT de = new WinApi.DEBUG_EVENT();
             WinApi.DbgCode continueStatus = WinApi.DbgCode.CONTINUE;
             bool isFirstInstBreakpointSet = false;
+
+            this.ProcHandle = WinApi.OpenProcess(WinApi.ProcessRights.ALL_ACCESS, false, (uint)this.Proc.Id);
 
             while (this.Proc.HasExited == false && this.allowedToDebug == true)
             {
