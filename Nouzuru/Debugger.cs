@@ -55,6 +55,11 @@
         /// </summary>
         private bool threadMayExit = true;
 
+        /// <summary>
+        /// The state of the target process when the target is paused.
+        /// </summary>
+        private TargetState ts = new TargetState();
+
         #endregion
 
         #region Constructor
@@ -333,7 +338,6 @@
 #endif
             cx.Dr7 =
                 (uint)(Debugger.DRegSettings.reg0w | Debugger.DRegSettings.reg0len4 | Debugger.DRegSettings.reg0set);
-
 
             if (!this.EndEditThread(ref threadHandle, ref cx))
             {
@@ -1376,9 +1380,26 @@
 
                         if (pauseDebugger || this.PauseOnSecondChanceException)
                         {
+                            // Reset the target state information.
+                            this.ts.Reset();
+
+                            // Get the thread context.
+                            IntPtr threadHandle;
+                            WinApi.CONTEXT context = new WinApi.CONTEXT();
+                            this.BeginEditThread(de.dwThreadId, out threadHandle, out context);
+
+                            // Save the thread state information.
+                            this.ts.ThreadId = de.dwThreadId;
+                            this.ts.ThreadHandle = threadHandle;
+                            this.ts.Context = context;
+
+                            // Pause the debugger and target.
                             this.pauseDebuggerLock.Reset();
                             this.IsDebuggerPaused = true;
                             this.pauseDebuggerLock.WaitOne();
+
+                            // Delete any target state information.
+                            this.ts.Reset();
                         }
 
                         break;
@@ -1453,6 +1474,36 @@
             /// The command line parameters to pass to the executable when it is launched.
             /// </summary>
             public string Parameters;
+        }
+
+        /// <summary>
+        /// The state of the paused target process that is being debugged.
+        /// </summary>
+        private class TargetState
+        {
+            /// <summary>
+            /// Gets or sets the context of the currently paused thread.
+            /// </summary>
+            public WinApi.CONTEXT Context { get; set; }
+
+            /// <summary>
+            /// Gets or sets the thread ID of the currently paused thread.
+            /// </summary>
+            public uint ThreadId { get; set; }
+
+            /// <summary>
+            /// Gets or sets the thread handle for the paused thread.
+            /// </summary>
+            public IntPtr ThreadHandle { get; set; }
+
+            /// <summary>
+            /// Resets the values of this TargetState object.
+            /// </summary>
+            public void Reset()
+            {
+                this.Context = new WinApi.CONTEXT();
+                this.ThreadId = 0;
+            }
         }
 
         #endregion
