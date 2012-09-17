@@ -158,9 +158,9 @@
         public bool IgnoreFirstChanceExceptions { get; set; }
 
         /// <summary>
-        /// Gets a value indicating where or not the debugger is paused.
+        /// Gets a value indicating whether the main debugging loop is currently paused.
         /// </summary>
-        public bool IsDebuggerPaused { get; private set; }
+        public bool IsDebuggingPaused { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether this Debugger is active.
@@ -172,11 +172,6 @@
                 return this.debugThread != null && this.debugThread.IsAlive;
             }
         }
-
-        /// <summary>
-        /// Stores a value indicating whether the target application is paused.
-        /// </summary>
-        public bool IsTargetPaused { get; private set; }
 
         /// <summary>
         /// Gets or sets the number of milliseconds that WaitForDebugEvent() will wait for a debug event.
@@ -195,7 +190,7 @@
         public void ContinueDebugging()
         {
             this.pauseDebuggerLock.Set();
-            this.IsDebuggerPaused = false;
+            this.IsDebuggingPaused = false;
         }
 
         /// <summary>
@@ -524,26 +519,26 @@
 
         public bool Pause()
         {
-            this.IsTargetPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
-            return this.IsDebuggerPaused;
+            this.IsDebuggingPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
+            return this.IsDebuggingPaused;
         }
 
         public void Resume()
         {
             this.ContinueDebugging();
-            this.IsTargetPaused = false;
+            this.IsDebuggingPaused = false;
         }
 
         public void StepInto()
         {
-            this.VerifyTargetIsPaused();
+            this.VerifyDebuggingIsPaused();
             this.EnableSingleStepMode();
             this.ContinueDebugging();
         }
 
         public void StepOver()
         {
-            this.VerifyTargetIsPaused();
+            this.VerifyDebuggingIsPaused();
         }
 
         #endregion
@@ -635,9 +630,9 @@
         /// <summary>
         /// Verify that the target process is paused.
         /// </summary>
-        protected void VerifyTargetIsPaused()
+        protected void VerifyDebuggingIsPaused()
         {
-            if (!this.IsTargetPaused)
+            if (!this.IsDebuggingPaused)
             {
                 throw new System.InvalidOperationException("The debugger is not paused");
             }
@@ -1395,7 +1390,7 @@
 
                             // Pause the debugger and target.
                             this.pauseDebuggerLock.Reset();
-                            this.IsDebuggerPaused = true;
+                            this.IsDebuggingPaused = true;
                             this.pauseDebuggerLock.WaitOne();
 
                             // Delete any target state information.
