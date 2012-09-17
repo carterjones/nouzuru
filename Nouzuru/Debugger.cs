@@ -490,7 +490,7 @@
             this.ts.Context = cx;
         }
 
-        #region Classic Debug Methods
+        #region Step Routines
 
         /// <summary>
         /// Executes the next instruction and then pauses the debugger. If the next instruction is a call instruction,
