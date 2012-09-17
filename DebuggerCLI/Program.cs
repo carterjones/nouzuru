@@ -33,7 +33,7 @@
             }
 
             //d.WaitUntilInitialBreakpointIsHit();
-            d.ContinueDebugging();
+            d.ResumeDebugging();
 
             // Main command loop.
             string userCommand = string.Empty;
@@ -46,13 +46,13 @@
                 {
                     // go
                     case "g":
-                        d.Resume();
+                        d.ResumeDebugging();
                         Console.WriteLine("[+] Resumed.");
                         break;
 
                     // pause
                     case "p":
-                        if (d.Pause())
+                        if (d.PauseDebugging())
                         {
                             Console.WriteLine("[+] Paused successfully.");
                         }

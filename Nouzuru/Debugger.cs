@@ -185,12 +185,21 @@
         #region Methods
 
         /// <summary>
-        /// Continues executing the debugger loop, if it has been stopped.
+        /// Pauses the target process by breaking into it via DebugBreakProcess.
         /// </summary>
-        public void ContinueDebugging()
+        /// <returns>true if the target was successfully paused</returns>
+        public bool PauseDebugging()
+        {
+            this.IsDebuggingPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
+            return this.IsDebuggingPaused;
+        }
+
+        /// <summary>
+        /// Resumes the debugger loop, if it has been paused.
+        /// </summary>
+        public void ResumeDebugging()
         {
             this.pauseDebuggerLock.Set();
-            this.IsDebuggingPaused = false;
         }
 
         /// <summary>
@@ -384,7 +393,7 @@
             if (this.debugThread != null)
             {
                 // Unblock the thread, if a second chance exception has occured.
-                this.ContinueDebugging();
+                this.ResumeDebugging();
 
                 // Wait for the thread to terminate.
                 while (this.debugThread.IsAlive && !this.threadMayExit)
@@ -489,23 +498,11 @@
 
         #region Classic Debug Methods
 
-        public bool Pause()
-        {
-            this.IsDebuggingPaused = WinApi.DebugBreakProcess(this.Proc.Handle);
-            return this.IsDebuggingPaused;
-        }
-
-        public void Resume()
-        {
-            this.ContinueDebugging();
-            this.IsDebuggingPaused = false;
-        }
-
         public void StepInto()
         {
             this.VerifyDebuggingIsPaused();
             this.EnableSingleStepMode();
-            this.ContinueDebugging();
+            this.ResumeDebugging();
         }
 
         public void StepOver()
@@ -1405,6 +1402,9 @@
                     this.pauseDebuggerLock.Reset();
                     this.IsDebuggingPaused = true;
                     this.pauseDebuggerLock.WaitOne();
+
+                    // Flag the debugger as unpaused.
+                    this.IsDebuggingPaused = false;
 
                     // Delete any target state information.
                     this.ts.Reset();
