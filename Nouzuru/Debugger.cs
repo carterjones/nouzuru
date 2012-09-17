@@ -945,7 +945,7 @@
 #if WIN64
             cx.Rip = (ulong)address.ToInt64();
 #else
-            cx.Rip = (uint)address.ToInt32();
+            cx.Eip = (uint)address.ToInt32();
 #endif
             this.ts.Context = cx;
         }
