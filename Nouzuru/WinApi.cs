@@ -770,7 +770,7 @@
         {
             public IntPtr hThread;
             public IntPtr lpThreadLocalBase;
-            public PTHREAD_START_ROUTINE lpStartAddress;
+            public IntPtr lpStartAddress;
         }
 
         [StructLayout(LayoutKind.Explicit)]
