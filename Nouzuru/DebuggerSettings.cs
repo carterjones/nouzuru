@@ -53,6 +53,30 @@
 
         public bool PauseOnUnhandledDebugException { get; set; }
 
+        /// <summary>
+        /// Gets or sets other flags that determine whether or not the debugger will pause on
+        /// exploitable exceptions.
+        /// </summary>
+        public bool PauseOnExploitableException
+        {
+            get
+            {
+                return
+                    this.PauseOnGuardPage &&
+                    this.PauseOnAccessViolation &&
+                    this.PauseOnIntOVerflow &&
+                    this.PauseOnStackOverflow;
+            }
+
+            set
+            {
+                this.PauseOnGuardPage = true;
+                this.PauseOnAccessViolation = true;
+                this.PauseOnIntOVerflow = true;
+                this.PauseOnStackOverflow = true;
+            }
+        }
+
         #endregion
     }
 }
