@@ -1068,7 +1068,7 @@
                 string commandLine = string.Empty;
                 if (!string.IsNullOrEmpty(parameters))
                 {
-                    commandLine = filePath + " " + parameters;
+                    commandLine = '"' + filePath + "\" " + parameters;
                 }
 
                 WinApi.PROCESS_INFORMATION procInfo = new WinApi.PROCESS_INFORMATION();
