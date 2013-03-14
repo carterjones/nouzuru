@@ -163,6 +163,11 @@
         public bool IgnoreFirstChanceExceptions { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether the debugger is currently processing a debug event.
+        /// </summary>
+        public bool IsBusy { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether the main debugging loop is currently paused.
         /// </summary>
         public bool IsDebuggingPaused { get; private set; }
@@ -1187,6 +1192,7 @@
                     continue;
                 }
 
+                this.IsBusy = true;
                 bool pauseDebugger = false;
 
                 switch (de.dwDebugEventCode)
@@ -1471,6 +1477,7 @@
                     // Pause the debugger and target.
                     this.pauseDebuggerLock.Reset();
                     this.IsDebuggingPaused = true;
+                    this.IsBusy = false;
                     this.pauseDebuggerLock.WaitOne();
 
                     // Save any changes that have been made to the thread context.
@@ -1485,6 +1492,7 @@
                     this.ts.Reset();
                 }
 
+                this.IsBusy = false;
                 WinApi.ContinueDebugEvent(de.dwProcessId, de.dwThreadId, continueStatus);
             }
 
