@@ -131,11 +131,6 @@
         public ExceptionFilter ExceptionsMonitored { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether the initial breakpoint has been encountered by the debugger.
-        /// </summary>
-        public bool InitialBreakpointHit { get; private set; }
-
-        /// <summary>
         /// Gets or sets an identifier that is appended to log entriess. This can be used to identify which instance
         /// of a debugger caused an event or exception.
         /// </summary>

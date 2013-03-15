@@ -168,6 +168,11 @@
         public bool IsBusy { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether the initial breakpoint has been encountered by the debugger.
+        /// </summary>
+        public bool InitialBreakpointHit { get; protected set; }
+
+        /// <summary>
         /// Gets a value indicating whether the main debugging loop is currently paused.
         /// </summary>
         public bool IsDebuggingPaused { get; private set; }
