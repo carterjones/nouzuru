@@ -1211,10 +1211,14 @@
                 switch (de.dwDebugEventCode)
                 {
                     case (uint)WinApi.DebugEventType.EXCEPTION_DEBUG_EVENT:
-                        if (this.IgnoreFirstChanceExceptions && de.Exception.dwFirstChance != 0)
+                        // Only ignore first chance exceptions after the first breakpoint has been hit.
+                        if (this.InitialBreakpointHit)
                         {
-                            continueStatus = WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
-                            break;
+                            if (this.IgnoreFirstChanceExceptions && de.Exception.dwFirstChance != 0)
+                            {
+                                continueStatus = WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
+                                break;
+                            }
                         }
 
                         switch (de.Exception.ExceptionRecord.ExceptionCode)
