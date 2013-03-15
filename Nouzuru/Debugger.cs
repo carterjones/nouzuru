@@ -1207,6 +1207,7 @@
 
                 this.IsBusy = true;
                 bool pauseDebugger = false;
+                bool isFirstBreakpointPass = false;
 
                 switch (de.dwDebugEventCode)
                 {
@@ -1254,7 +1255,14 @@
 
                             case (uint)WinApi.ExceptionType.STATUS_WX86_BREAKPOINT:
                             case (uint)WinApi.ExceptionType.BREAKPOINT:
+                                bool initialBreakpointStart = this.InitialBreakpointHit;
                                 continueStatus = this.OnBreakpointDebugException(ref de);
+                                bool initialBreakpointEnd = this.InitialBreakpointHit;
+                                if (initialBreakpointStart != initialBreakpointEnd)
+                                {
+                                    isFirstBreakpointPass = true;
+                                }
+
                                 if (this.Settings.PauseOnBreakpoint)
                                 {
                                     pauseDebugger = true;
@@ -1425,7 +1433,9 @@
                                 break;
                         }
 
-                        if (this.PauseOnSecondChanceException)
+                        // Only break on second exceptions once the first breakpoint has been
+                        // encountered.
+                        if (this.PauseOnSecondChanceException && !isFirstBreakpointPass)
                         {
                             pauseDebugger = true;
                         }
