@@ -168,7 +168,7 @@
         public bool IsBusy { get; private set; }
 
         /// <summary>
-        /// Gets a value indicating whether the initial breakpoint has been encountered by the debugger.
+        /// Gets or sets a value indicating whether the initial breakpoint has been encountered by the debugger.
         /// </summary>
         public bool InitialBreakpointHit { get; protected set; }
 
@@ -1433,8 +1433,7 @@
                                 break;
                         }
 
-                        // Only break on second exceptions once the first breakpoint has been
-                        // encountered.
+                        // Only break on second exceptions once the first breakpoint has been encountered.
                         if (this.PauseOnSecondChanceException && !isFirstBreakpointPass)
                         {
                             pauseDebugger = true;
