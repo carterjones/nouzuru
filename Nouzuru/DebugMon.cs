@@ -367,6 +367,8 @@
                 {
                     this.monitorLogger.Log("Initial breakpoint hit.");
                 }
+
+                return WinApi.DbgCode.CONTINUE;
             }
             else
             {

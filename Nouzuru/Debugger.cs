@@ -720,7 +720,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnAccessViolationDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -730,7 +730,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnArrayBoundsExceededDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -740,7 +740,15 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnBreakpointDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            if (!this.InitialBreakpointHit)
+            {
+                this.InitialBreakpointHit = true;
+                return WinApi.DbgCode.CONTINUE;
+            }
+            else
+            {
+                return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
+            }
         }
 
         /// <summary>
@@ -750,7 +758,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnDatatypeMisalignmentDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -760,7 +768,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltDenormalOperandDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -770,7 +778,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -780,7 +788,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltInexactResultDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -790,7 +798,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltInvalidOperationDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -800,7 +808,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -810,7 +818,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltStackCheckDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -820,7 +828,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnFltUnderflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -840,7 +848,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnIllegalInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -850,7 +858,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnInPageErrorDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -860,7 +868,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnIntDivideByZeroDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -870,7 +878,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnIntOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -880,7 +888,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnInvalidDispositionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -890,7 +898,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnNoncontinuableExceptionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -900,7 +908,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnPrivInstructionDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -910,7 +918,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnSingleStepDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -920,7 +928,7 @@
         /// <returns>Returns the continue debugging status code.</returns>
         protected virtual WinApi.DbgCode OnStackOverflowDebugException(ref WinApi.DEBUG_EVENT de)
         {
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         /// <summary>
@@ -934,7 +942,7 @@
                 "An unhandled (default) debug exception occurred. " +
                 "Exception code: 0x" + de.Exception.ExceptionRecord.ExceptionCode.ToString("x"),
                 Logger.Level.DEBUG);
-            return WinApi.DbgCode.CONTINUE;
+            return WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
         }
 
         #endregion
@@ -1460,6 +1468,7 @@
                         break;
 
                     default:
+                        continueStatus = WinApi.DbgCode.EXCEPTION_NOT_HANDLED;
                         break;
                 }
 
