@@ -1,6 +1,4 @@
-﻿// This is free and unencumbered software released into the public domain. The most recent version can be found at:
-// https://github.com/carterjones/logger/blob/master/Logger/Logger.cs
-namespace Logger
+﻿namespace Logger
 {
     using System;
 
