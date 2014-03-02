@@ -371,7 +371,7 @@
 
             try
             {
-                return this.GetLoadedModules();
+                return this.Proc.Modules;
             }
             catch (System.ComponentModel.Win32Exception)
             {
