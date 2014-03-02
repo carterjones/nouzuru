@@ -78,7 +78,7 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\bunseki\Bunseki\Bunseki.csproj">
+    <ProjectReference Include="..\plugins\bunseki\Bunseki\Bunseki.csproj">
       <Project>{AF903833-3F53-42BC-ADA1-797D9709EA3C}</Project>
       <Name>Bunseki</Name>
     </ProjectReference>

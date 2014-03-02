@@ -1,0 +1,3 @@
+[submodule "plugins/bunseki"]
+	path = plugins/bunseki
+	url = https://gitlab.com/carterjones/bunseki.git
