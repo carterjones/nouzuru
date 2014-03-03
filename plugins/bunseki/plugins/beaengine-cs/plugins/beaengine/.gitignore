@@ -1,0 +1,11 @@
+*
+!.gitignore
+!*.c
+!*.h
+!*.sln
+!*.vcxproj
+!beaengine
+!includes
+!includes/instr_set
+!COPYING.txt
+!COPYING.LESSER.txt

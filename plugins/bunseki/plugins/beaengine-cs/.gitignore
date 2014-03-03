@@ -1,0 +1,14 @@
+*
+!.gitignore
+!*.cs
+!*.csproj
+!*.resx
+!*.settings
+!*.sln
+!*.vcxproj
+!BeaEngineCS
+!Tests
+!plugins
+!plugins/beaengine
+!LICENSE
+!README.md

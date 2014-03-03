@@ -1,0 +1,10 @@
+*
+!.gitignore
+!README.md
+!LICENSE
+!*.sln
+!*.cs
+!*.csproj
+!*Settings.StyleCop
+!Distorm3cs
+!Tests
