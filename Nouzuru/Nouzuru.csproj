@@ -32,17 +32,21 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DefineConstants>TRACE;WIN64</DefineConstants>
     <Optimize>false</Optimize>
+    <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <Optimize>false</Optimize>
     <DefineConstants>TRACE;DEBUG;WIN32</DefineConstants>
+    <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <DefineConstants>TRACE;WIN32</DefineConstants>
+    <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DefineConstants>TRACE;DEBUG;WIN64</DefineConstants>
     <Optimize>false</Optimize>
+    <NoStdLib>false</NoStdLib>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -51,9 +55,6 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="mscorlib">
-      <HintPath>$(windir)\Microsoft.NET\Framework$(BitValue)\v4.0.30319\mscorlib.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Address.cs" />
