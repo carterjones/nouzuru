@@ -44,6 +44,11 @@
                 userCommand = Console.ReadLine();
                 switch (userCommand)
                 {
+                    // disassemble
+                    case "d":
+                        d.DisassembleCurrentInstruction();
+                        break;
+
                     // go
                     case "g":
                         d.ResumeDebugging();
