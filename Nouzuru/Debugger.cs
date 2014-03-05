@@ -501,6 +501,10 @@
         /// </summary>
         public void StepOver()
         {
+            if (!this.IsOpen)
+            {
+                throw new System.InvalidOperationException("No process is attached");
+            }
             this.VerifyDebuggingIsPaused();
             this.stepOverOperationInProgress = true;
             Instruction inst = this.DisassembleInstruction(this.CurrentInstruction);
@@ -514,6 +518,32 @@
             {
                 this.StepInto();
             }
+
+            IntPtr threadHandle;
+            WinApi.CONTEXT cx;
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
+
+            IntPtr currentInst = new IntPtr((long)cx._ip);
+            int currentInstSize = this.GetInstructionSize(currentInst);
+            IntPtr nextInst = IntPtr.Add(currentInst, currentInstSize);
+
+            cx.ContextFlags = WinApi.CONTEXT_FLAGS.FULL;
+#if WIN64
+            cx.Dr0 = (uint)nextInst.ToInt64();
+#else
+            cx.Dr0 = (uint)nextInst.ToInt32();
+#endif
+            cx.Dr7 =
+                (uint)(Debugger.DRegSettings.reg0rw |
+                       Debugger.DRegSettings.reg0len4 |
+                       Debugger.DRegSettings.reg0set);
+
+
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
+
+            this.ResumeDebugging();
+
+            WinApi.CloseHandle(threadHandle);
         }
 
         #endregion
