@@ -521,11 +521,7 @@
 
             IntPtr threadHandle;
             WinApi.CONTEXT cx;
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                throw new System.InvalidOperationException(
-                    "Unable to start editing thread. GetLastError(): " + Marshal.GetLastWin32Error());
-            }
+            this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx);
 
             IntPtr currentInst = new IntPtr((long)cx._ip);
             int currentInstSize = this.GetInstructionSize(currentInst);
@@ -543,13 +539,9 @@
                        Debugger.DRegSettings.reg0set);
 
 
-            if (!this.BeginEditThread((uint)this.ThreadID, out threadHandle, out cx))
-            {
-                throw new System.InvalidOperationException(
-                    "Unable to stop editing thread. GetLastError(): " + Marshal.GetLastWin32Error());
-            }
+            this.EndEditThread((uint)this.ThreadID, ref threadHandle, ref cx);
 
-            this.secondChanceExceptionLock.Set();
+            this.ResumeDebugging();
 
             WinApi.CloseHandle(threadHandle);
         }
