@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using Bunseki;
+    using Distorm3cs;
 
     /// <summary>
     /// Represents a memory page.

@@ -81,6 +81,10 @@
       <Project>{AF903833-3F53-42BC-ADA1-797D9709EA3C}</Project>
       <Name>Bunseki</Name>
     </ProjectReference>
+    <ProjectReference Include="..\plugins\bunseki\plugins\distorm3cs\Distorm3cs\Distorm3cs.csproj">
+      <Project>{27C84C77-6F54-481F-8598-639AC768753D}</Project>
+      <Name>Distorm3cs</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
