@@ -155,7 +155,7 @@
 
         public string DisassembleCurrentInstruction()
         {
-            this.VerifyTargetIsPaused();
+            this.VerifyDebuggingIsPaused();
             return this.DisassembleInstructionAtAddress(this.CurrentAddress);
         }
 

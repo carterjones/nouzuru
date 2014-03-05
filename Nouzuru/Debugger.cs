@@ -169,7 +169,7 @@
         {
             get
             {
-                if (this.IsTargetPaused)
+                if (this.IsDebuggingPaused)
                 {
                     return this.currentAddress;
                 }
