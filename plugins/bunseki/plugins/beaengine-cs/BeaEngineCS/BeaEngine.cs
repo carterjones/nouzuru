@@ -275,7 +275,6 @@
                 d.Length = BeaEngine.Disassemble(ref d);
                 if (d.Length == BeaEngine.OutOfBlock)
                 {
-                    Console.WriteLine("disasm engine is not allowed to read more memory.");
                     error = true;
                 }
                 else if (d.Length == BeaEngine.UnknownOpcode)
