@@ -157,7 +157,7 @@
         /// <summary>
         /// Gets or sets a logger used to report status updates, errors, etc.
         /// </summary>
-        protected Logger Status { get; set; }
+        public Logger Status { get; set; }
 
         #endregion
 
